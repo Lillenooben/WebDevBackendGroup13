@@ -1,5 +1,4 @@
 
-BEGIN
 INSERT INTO usersTable (username, userPassword)
 VALUES
     ("Jesper", "abc123"),
@@ -57,5 +56,3 @@ VALUES
     (3, 4, FALSE),
     (3, 5, FALSE),
     (4, 5, TRUE);
-
-END

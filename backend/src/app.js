@@ -1,5 +1,8 @@
 import express from 'express'
 import {createPool} from 'mariadb'
+import * as mod from './globalFunctions.js'
+import {router as userRouter} from './user-router.js'
+import {router as groupRouter} from './group-router.js'
 
 const pool = createPool({
     host: "database",
@@ -15,23 +18,12 @@ pool.on('error', function(error){
 
 const app = express()
 
-app.get("/humans", async function(request, response){
-    console.log("Hello there hi")
-    
-    try{
-        const connection = await pool.getConnection()
-        const query = "SELECT * FROM humans ORDER BY name"
-        const humans = await connection.query(query)
-        response.status(200).json(humans)
-
-    }catch(error){
-        console.log(error)
-        response.status(500).end()
-    }
-})
-
 app.get("/", function(request, response){
     response.send("It works")
 })
+
+app.use("/user", userRouter)
+
+app.use("/group", groupRouter)
 
 app.listen(8080)
