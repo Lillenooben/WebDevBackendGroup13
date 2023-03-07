@@ -1,4 +1,7 @@
 import {createPool} from 'mariadb'
+import bcrypt, { hash } from 'bcrypt'
+
+const saltRounds = 10
 
 const pool = createPool({
     host: "database",
@@ -18,6 +21,44 @@ export function getParsedIDs(objectArray){
         IDs.push(Object.values(element)[0])
     });
     return IDs
+}
+
+export async function hashPassword(password){
+    bcrypt.hash(password, saltRounds, async function(err, hash){
+        console.log("hashPassword: " + hash)
+        return hash
+    })
+}
+
+export async function addUser(username, password){
+    bcrypt.hash(password, saltRounds, async function(err, hash){
+        console.log("hashPassword: " + hash)
+        try{
+            const connection = await pool.getConnection()
+            let query = "INSERT INTO usersTable (username, userPassword) VALUES (?,?)"
+            await connection.query(query, [username, hash])
+            return true
+        }catch(error){
+            console.log(error)
+            console.log(err)
+            return false
+        }
+    })
+}
+
+export async function compareLoginCredentials(username, password){
+    const connection = await pool.getConnection()
+    let query = "SELECT userPassword FROM usersTable WHERE username = ?"
+    const hashedObjectFromDatabase = await connection.query(query, [username])
+
+    const hashedPassword = hashedObjectFromDatabase[0].userPassword
+
+    return bcrypt.compareSync(password, hashedPassword)
+
+    /*await bcrypt.compare(password, hashedPassword).then(function(result){
+        console.log(result)
+        return result
+    })*/
 }
 
 export async function getInvitationsFromUserID(userID){

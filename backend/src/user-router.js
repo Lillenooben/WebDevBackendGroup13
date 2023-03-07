@@ -1,8 +1,11 @@
 import express from 'express'
 import {createPool} from 'mariadb'
+import bcrypt from 'bcrypt'
 import * as mod from './globalFunctions.js'
 
 const router = express.Router()
+
+router.use(express.json())
 
 const pool = createPool({
     host: "database",
@@ -30,15 +33,11 @@ router.get("/all", async function(request, response){
 
 router.post("/add", async function(request, response){
     const enteredUsername = request.body.username
-    const enteredPassword = request.body.password
-
-    try{
-        const connection = await pool.getConnection()
-        const query = "INSERT INTO usersTable (username, userPassword) VALUES (?,?)"
-        await connection.query(query, [enteredUsername, enteredPassword])
-        response.redirect('/')
-    }catch(error){
-        console.log(error)
+    const enteredPlainTextPassword = request.body.password
+    if(mod.addUser(enteredUsername, enteredPlainTextPassword)){
+        response.redirect("/user/all")
+    }
+    else{
         response.status(500).end("Bad request")
     }
 })

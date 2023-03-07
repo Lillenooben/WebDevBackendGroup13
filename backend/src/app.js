@@ -1,8 +1,9 @@
 import express from 'express'
 import {createPool} from 'mariadb'
-import * as mod from './globalFunctions.js'
+import bcrypt from 'bcrypt'
 import {router as userRouter} from './user-router.js'
 import {router as groupRouter} from './group-router.js'
+import * as mod from './globalFunctions.js'
 
 const pool = createPool({
     host: "database",
@@ -18,8 +19,32 @@ pool.on('error', function(error){
 
 const app = express()
 
+app.use(express.json())
+
 app.get("/", function(request, response){
     response.send("It works")
+})
+
+app.post("/login", async function(request, response){
+    const enteredUsername = String(request.body.username)
+    const enteredPassword = String(request.body.password)
+
+    console.log(enteredUsername)
+    console.log(enteredPassword)
+
+    
+    try{
+        if(await mod.compareLoginCredentials(enteredUsername, enteredPassword)){
+            response.redirect("/")
+        }
+        else{
+            throw "Bad login info"
+        }
+
+    }catch(error){  
+        console.log(error)
+        response.status(500).end("Bad request")
+    }
 })
 
 app.use("/user", userRouter)

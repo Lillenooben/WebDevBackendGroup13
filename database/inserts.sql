@@ -1,10 +1,11 @@
 
+
 INSERT INTO usersTable (username, userPassword)
 VALUES
     ("Jesper", "abc123"),
     ("Joakim", "abc123"),
-    ("Axel", "abc123"),
-    ("Dummy", "abc123");
+    ("Axel", "abc456"),
+    ("Dummy", "abc789");
 
 
 INSERT INTO groupsTable (groupName)
