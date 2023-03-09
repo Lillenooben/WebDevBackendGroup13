@@ -3,6 +3,7 @@ import {createPool} from 'mariadb'
 import bcrypt from 'bcrypt'
 import {router as userRouter} from './user-router.js'
 import {router as groupRouter} from './group-router.js'
+import {router as eventRouter} from './event-router.js'
 import * as mod from './globalFunctions.js'
 
 const pool = createPool({
@@ -28,10 +29,6 @@ app.get("/", function(request, response){
 app.post("/login", async function(request, response){
     const enteredUsername = String(request.body.username)
     const enteredPassword = String(request.body.password)
-
-    console.log(enteredUsername)
-    console.log(enteredPassword)
-
     
     try{
         if(await mod.compareLoginCredentials(enteredUsername, enteredPassword)){
@@ -50,5 +47,7 @@ app.post("/login", async function(request, response){
 app.use("/user", userRouter)
 
 app.use("/group", groupRouter)
+
+app.use("/event", eventRouter)
 
 app.listen(8080)

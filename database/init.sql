@@ -18,15 +18,15 @@ CREATE TABLE IF NOT EXISTS userGroupConTable (
     nickname VARCHAR(14),
     isOwner BOOLEAN,
     notifEnabled BOOLEAN,
-    FOREIGN KEY (userID) REFERENCES usersTable(userID),
-    FOREIGN KEY (groupID) REFERENCES groupsTable(groupID)
+    FOREIGN KEY (userID) REFERENCES usersTable(userID) ON DELETE CASCADE,
+    FOREIGN KEY (groupID) REFERENCES groupsTable(groupID) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS invitationsTable (
     userID INT,
     groupID INT,
-    FOREIGN KEY (userID) REFERENCES usersTable(userID),
-    FOREIGN KEY (groupID) REFERENCES groupsTable(groupID)
+    FOREIGN KEY (userID) REFERENCES usersTable(userID) ON DELETE CASCADE,
+    FOREIGN KEY (groupID) REFERENCES groupsTable(groupID) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS eventsTable (
@@ -35,13 +35,13 @@ CREATE TABLE IF NOT EXISTS eventsTable (
     eventTitle TEXT(20),
     eventDesc TEXT(50),
     eventDate DATETIME,
-    FOREIGN KEY (groupID) REFERENCES groupsTable(groupID)
+    FOREIGN KEY (groupID) REFERENCES groupsTable(groupID) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS userEventConTable (
     userID INT,
     eventID INT,
     isOptIn BOOLEAN,
-    FOREIGN KEY (userID) REFERENCES usersTable(userID),
-    FOREIGN KEY (eventID) REFERENCES eventsTable(eventID)
+    FOREIGN KEY (userID) REFERENCES usersTable(userID) ON DELETE CASCADE,
+    FOREIGN KEY (eventID) REFERENCES eventsTable(eventID) ON DELETE CASCADE
 );
