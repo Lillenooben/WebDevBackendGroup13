@@ -1,17 +1,18 @@
 <script>
   import { Router, Link, Route } from "svelte-routing"
-  import Home from "./routes/Home.svelte"
-  import MyGroups from "./routes/MyGroups.svelte"
-  import CreateGroup from "./routes/CreateGroup.svelte"
-  import Profile from "./routes/Profile.svelte"
-  import Group from "./routes/Group.svelte"
+  import Home from "./lib/Home.svelte"
+  import MyGroups from "./lib/MyGroups.svelte"
+  import CreateGroup from "./lib/CreateGroup.svelte"
+  import Profile from "./lib/Profile.svelte"
+  import Group from "./lib/Group.svelte"
 
   export let url = ""
 </script>
 
-<main>
+<div id="layout">
+  
   <Router url="{url}">
-    <nav class="navigation">
+    <nav id="navigation">
       <Link to="/">
         <img src="/NotifyUs_Logo.png" class="logo" alt="NotifyUs Logo"/>
       </Link>
@@ -19,15 +20,16 @@
       <Link to="create-group">Create Group</Link>
       <Link to="profile">Profile</Link>
     </nav>
-    <div>
-      <Route path="/" component="{Home}" />
-      <Route path="groups" component="{MyGroups}" />
-      <Route path="create-group" component="{CreateGroup}" />
-      <Route path="profile" component="{Profile}" />
-      <Route path="group/:id" component="{Group}" />
-    </div>
+    <main>
+        <Route path="/" component="{Home}" />
+        <Route path="groups" component="{MyGroups}" />
+        <Route path="create-group" component="{CreateGroup}" />
+        <Route path="profile" component="{Profile}" />
+        <Route path="group/:id" component="{Group}" />
+    </main>
   </Router>
-</main>
+
+</div>
 
 <style>
   .logo {
@@ -39,14 +41,14 @@
   .logo:hover {
     filter: drop-shadow(0 0 1em #464647ec);
   }
-  .navigation {
+  #navigation {
     background-color: #dfdfdfec;
     display: flex;
     font-size: large;
     align-items: center;
     gap: 40px;
   }
-  main {
+  #layout {
     position: absolute;
     top: 0;
     left: 0;
