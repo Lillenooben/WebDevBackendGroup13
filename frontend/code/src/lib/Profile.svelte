@@ -3,7 +3,10 @@
     import { navigate } from "svelte-routing"
 
     function logout() {
-        $user.isLoggedIn = false
+        $user = {
+            isLoggedIn: false,
+            accessToken: "",
+        }
         navigate("/login")
     }
 </script>

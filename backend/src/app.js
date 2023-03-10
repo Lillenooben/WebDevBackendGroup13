@@ -1,10 +1,13 @@
 import express from 'express'
+import jwt from 'jsonwebtoken'
 import {createPool} from 'mariadb'
 import bcrypt from 'bcrypt'
 import {router as userRouter} from './user-router.js'
 import {router as groupRouter} from './group-router.js'
 import {router as eventRouter} from './event-router.js'
 import * as mod from './globalFunctions.js'
+
+const ACCESS_TOKEN_SECRET = "sdkvjnaewrfjjljqwlvd"
 
 const pool = createPool({
     host: "database",
@@ -21,15 +24,13 @@ pool.on('error', function(error){
 const app = express()
 
 app.use(express.json())
+app.use(express.urlencoded({extended: true}))
 
 app.use(function(req, res, next) {
 
-    res.header("Access-Control-Allow-Origin", "*")
-
-    res.header(
-        "Access-Control-Allow-Headers",
-        "Origin, X-Requested-With, Content-Type, Accept"
-    )
+    res.set("Access-Control-Allow-Origin", "*")
+    res.set("Access-Control-Allow-Methods", "*")
+    res.set("Access-Control-Allow-Headers", "*")
 
     next()
 
@@ -40,21 +41,41 @@ app.get("/", function(request, response){
 })
 
 app.post("/login", async function(request, response){
-    const enteredUsername = request.body.username
-    const enteredPassword = request.body.password
+    const grantType = request.body.grant_type
+    const username = request.body.username
+    const password = request.body.password
 
-    try{
-        if(await mod.compareLoginCredentials(enteredUsername, enteredPassword)){
-            response.status(200).json({message: "OK"})
-        }
-        else{
-            throw "Bad login info"
-        }
-
-    }catch(error){  
-        console.log(error)
-        response.status(400).json({error: "Incorrect username or password"})
+    if (grantType != "password") {
+        response.status(400).json({error: "unsupported_grant_type"})
+        return
     }
+
+    const result = await mod.compareLoginCredentials(username, password)
+
+    if(result.success){
+        
+        const payload = {
+            sub: result.id
+        }
+
+        jwt.sign(payload, ACCESS_TOKEN_SECRET, function(error, accessToken){
+
+            if (error) {
+                response.status(500).end()
+            } else {
+                response.status(200).json({
+                    access_token: accessToken,
+                    type: "bearer",
+                })
+            }
+
+        })
+
+    }
+    else{
+        response.status(400).json({error: "invalid_grant"})
+    }
+
 })
 
 app.use("/user", userRouter)

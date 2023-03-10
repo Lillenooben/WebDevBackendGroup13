@@ -1,8 +1,9 @@
 <script>
     import { user } from "../user-store.js"
     import { navigate } from "svelte-routing"
+    import Loader from "./Loader.svelte"
 
-    //TODO: add loading (make a loader component)
+    let loading = false
     let username = ""
     let password = ""
     let confirmPassword = ""
@@ -15,6 +16,7 @@
     //TODO: add more error handling and better error messages (perhaps using the error codes?) (username+password length)
     //TODO: add accessToken
     async function createAcc() {
+        loading = true
         errors = []
 
         if (password != confirmPassword) {
@@ -36,16 +38,22 @@
         })
 
         switch (response.status) {
-            case 200:
+            case 201:
                 $user.isLoggedIn = true
                 navigate("/")
             case 400:
                 addError("Something went wrong")
+                loading = false
+                break
         }
     }
 </script>
 
 <h1>Create account</h1>
+
+{#if loading}
+    <Loader/>
+{/if}
 
 {#each errors as error}
     <p class="error-text">{error}</p>

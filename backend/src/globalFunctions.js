@@ -110,7 +110,7 @@ export async function updateUserData(userData){
 
 export async function compareLoginCredentials(username, password){
     const connection = await pool.getConnection()
-    const query = "SELECT userPassword FROM usersTable WHERE username = ?"
+    const query = "SELECT userPassword, userID FROM usersTable WHERE username = ?"
 
     try {
 
@@ -119,11 +119,14 @@ export async function compareLoginCredentials(username, password){
         const hashedPassword = hashedObjectFromDatabase[0].userPassword
         
         connection.release()
-        return bcrypt.compareSync(password, hashedPassword)
+        return {
+            success: bcrypt.compareSync(password, hashedPassword),
+            id: hashedObjectFromDatabase[0].userID
+        }
 
     } catch (error) {
         connection.release()
-        return false
+        return {success: false}
     }
 
 }

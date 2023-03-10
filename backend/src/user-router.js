@@ -34,7 +34,7 @@ router.post("/create", async function(request, response){
     const enteredUsername = request.body.username
     const enteredPlainTextPassword = request.body.password
     if(await mod.addUser(enteredUsername, enteredPlainTextPassword)){
-        response.status(200).end()
+        response.status(201).end()
     }
     else{
         response.status(400).json({error: "Bad request"})

@@ -1,6 +1,7 @@
 <script>
     import { user } from "../user-store.js"
     import { Link, navigate } from "svelte-routing"
+    import Loader from "./Loader.svelte"
 
     let loading = false
     let username = ""
@@ -11,36 +12,40 @@
         error = ""
         loading = true
 
-        const data = {
-            //TODO: use grant_type in backend
-            grant_type: 'password',
-            username: username,
-            password: password
-        }
-
         const response = await fetch("http://localhost:8080/login", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/x-www-form-urlencoded"
             },
-            body: JSON.stringify(data)
+            body: `grant_type=password&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
         })
 
         const body = await response.json()
 
         switch (response.status) {
+            case 500:
+                loading = false
+                error = "Something went wrong"
+                break
             case 400:
                 loading = false
-                error = body.error
-                return
+
+                switch (body.error) {
+                    case "invalid_grant":
+                        error = "Incorrect username or password"
+                        break
+                    case "unsupported_grant_type":
+                        error = "Unsupported grant type"
+                        break
+                }
+                break
             case 200:
                 $user = {
                     isLoggedIn: true,
-                    accessToken: "",
+                    accessToken: body.access_token,
                 }
                 navigate("/")
         }
-        //TODO: add accessToken
         
     }
 </script>
@@ -48,7 +53,7 @@
 <h1>Login</h1>
 
 {#if loading}
-    <div class="loader"></div>
+    <Loader/>
 {/if}
 <p class="error-text">{error}</p>
 
@@ -73,19 +78,5 @@
 <style>
     .error-text {
         color: red
-    }
-    .loader {
-        border: 8px solid #dadada;
-        border-top: 8px solid #6d6d6d;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        animation: spin 2s linear infinite;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
     }
 </style>
