@@ -15,6 +15,6 @@ services:
   frontend:
     build: ./frontend/
     ports:
-      - "4444:4444"
+      - "5173:5173"
     volumes:
       - ./frontend/code/:/frontend/code/

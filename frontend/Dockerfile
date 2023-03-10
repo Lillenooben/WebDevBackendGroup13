@@ -8,4 +8,4 @@ RUN npm install
 
 COPY ./code/ ./
 
-CMD npm run start
+CMD npm run dev
