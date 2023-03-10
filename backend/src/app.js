@@ -22,17 +22,30 @@ const app = express()
 
 app.use(express.json())
 
+app.use(function(req, res, next) {
+
+    res.header("Access-Control-Allow-Origin", "*")
+
+    res.header(
+        "Access-Control-Allow-Headers",
+        "Origin, X-Requested-With, Content-Type, Accept"
+    )
+
+    next()
+
+})
+
 app.get("/", function(request, response){
     response.send("It works")
 })
 
 app.post("/login", async function(request, response){
-    const enteredUsername = String(request.body.username)
-    const enteredPassword = String(request.body.password)
-    
+    const enteredUsername = request.body.username
+    const enteredPassword = request.body.password
+
     try{
         if(await mod.compareLoginCredentials(enteredUsername, enteredPassword)){
-            response.redirect("/")
+            response.status(200).json({message: "OK"})
         }
         else{
             throw "Bad login info"
@@ -40,7 +53,7 @@ app.post("/login", async function(request, response){
 
     }catch(error){  
         console.log(error)
-        response.status(500).end("Bad request")
+        response.status(400).json({error: "Incorrect username or password"})
     }
 })
 

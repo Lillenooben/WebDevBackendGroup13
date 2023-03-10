@@ -33,11 +33,11 @@ router.get("/all", async function(request, response){
 router.post("/create", async function(request, response){
     const enteredUsername = request.body.username
     const enteredPlainTextPassword = request.body.password
-    if(mod.addUser(enteredUsername, enteredPlainTextPassword)){
-        response.redirect("/user/all")
+    if(await mod.addUser(enteredUsername, enteredPlainTextPassword)){
+        response.status(200).end()
     }
     else{
-        response.status(500).end("Bad request")
+        response.status(400).json({error: "Bad request"})
     }
 })
 

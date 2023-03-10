@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS usersTable (
     userID INT PRIMARY KEY AUTO_INCREMENT,
-    username VARCHAR(14),
+    username VARCHAR(14) unique,
     userPassword CHAR(72),
     profilePicture BLOB,
     isActive BOOLEAN
