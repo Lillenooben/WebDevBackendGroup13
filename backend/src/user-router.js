@@ -2,6 +2,11 @@ import express from 'express'
 import {createPool} from 'mariadb'
 import * as mod from './globalFunctions.js'
 
+const MIN_USERNAME_LEN = 3
+const MAX_USERNAME_LEN = 14
+const MIN_PASSWORD_LEN = 8
+const MAX_PASSWORD_LEN = 14
+
 const router = express.Router()
 
 router.use(express.json())
@@ -30,15 +35,40 @@ router.get("/all", async function(request, response){
     }
 })
 
+
 router.post("/create", async function(request, response){
-    const enteredUsername = request.body.username
-    const enteredPlainTextPassword = request.body.password
-    if(await mod.addUser(enteredUsername, enteredPlainTextPassword)){
-        response.status(201).end()
+    const body = request.body
+
+    let errors = []
+
+    if (body.username.length < MIN_USERNAME_LEN || body.username.length > MAX_USERNAME_LEN) {
+        errors.push("Username must be between " + MIN_USERNAME_LEN + " and " + MAX_USERNAME_LEN + " characters")
     }
-    else{
-        response.status(400).json({error: "Bad request"})
+
+    if (body.password.length < MIN_PASSWORD_LEN || body.password.length > MAX_PASSWORD_LEN) {
+        errors.push("Password must be between " + MIN_PASSWORD_LEN + " and " + MAX_PASSWORD_LEN + " characters")
     }
+
+    if (body.password != body.confirmPassword) {
+        errors.push("Your passwords do not match")
+    }
+
+    if (errors.length > 0) {
+        response.status(400).json({errors: errors})
+        return
+    }
+
+    try {
+        if(await mod.addUser(body.username, body.password)){
+            response.status(201).end()
+        }
+        else{
+            response.status(400).json({errors: ["That username is already taken"]})
+        }
+    } catch(error) {
+        response.status(500).end()
+    }
+    
 })
 
 router.get("/:userID", async function(request, response){

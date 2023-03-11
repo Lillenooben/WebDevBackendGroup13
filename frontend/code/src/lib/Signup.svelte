@@ -1,6 +1,5 @@
 <script>
-    import { user } from "../user-store.js"
-    import { navigate } from "svelte-routing"
+    import { Link } from "svelte-routing"
     import Loader from "./Loader.svelte"
 
     let loading = false
@@ -8,43 +7,47 @@
     let password = ""
     let confirmPassword = ""
     let errors = []
+    let hasSucceeded = false
 
-    function addError(message) {
-        errors = [...errors, message]
-    }
-
-    //TODO: add more error handling and better error messages (perhaps using the error codes?) (username+password length)
-    //TODO: add accessToken
     async function createAcc() {
         loading = true
         errors = []
-
-        if (password != confirmPassword) {
-            addError("Your passwords do not match")
-            return
-        }
+        hasSucceeded = false
         
         const data = {
             username: username,
-            password: password
+            password: password,
+            confirmPassword: confirmPassword,
         }
 
-        const response = await fetch("http://localhost:8080/user/create", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data)
-        })
+        try {
+            const response = await fetch("http://localhost:8080/user/create", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            })
 
-        switch (response.status) {
-            case 201:
-                $user.isLoggedIn = true
-                navigate("/")
-            case 400:
-                addError("Something went wrong")
-                loading = false
-                break
+            switch (response.status) {
+                case 201:
+                    hasSucceeded = true
+                    break
+                case 400:
+                    const body = await response.json()
+                    errors = body.errors
+                    break
+                case 500:
+                    errors = ["Something went wrong"]
+                    break
+            }
+
+            loading = false
+
+        } catch(error) {
+            console.log(error)
+            loading = false
+            errors = ["Something went wrong"]
         }
     }
 </script>
@@ -53,6 +56,8 @@
 
 {#if loading}
     <Loader/>
+{:else if hasSucceeded}
+    <p>Account created! <Link to="login">Click here to log in!</Link></p>
 {/if}
 
 {#each errors as error}
