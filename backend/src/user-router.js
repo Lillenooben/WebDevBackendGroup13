@@ -24,14 +24,16 @@ pool.on('error', function(error){
 })
 
 router.get("/all", async function(request, response){
+    const connection = await pool.getConnection()
     try{
-        const connection = await pool.getConnection()
         const query = "SELECT * FROM usersTable ORDER BY userID"
         const allUsersFromDatabase = await connection.query(query)
+        connection.release()
         response.status(200).json(allUsersFromDatabase)
     }catch(error){
+        connection.release()
         console.log(error)
-        response.status(500).end("Bad request")
+        response.status(500).end("Internal Server Error")
     }
 })
 
@@ -66,7 +68,7 @@ router.post("/create", async function(request, response){
             response.status(400).json({errors: ["That username is already taken"]})
         }
     } catch(error) {
-        response.status(500).end()
+        response.status(500).end("Internal Server Error")
     }
     
 })
@@ -78,7 +80,7 @@ router.get("/:userID", async function(request, response){
         response.status(200).json(userFromUserID)
     }catch(error){
         console.log(error)
-        response.status(500).end("Bad request")
+        response.status(500).end("Internal Server Error")
     }
 })
 
@@ -89,7 +91,7 @@ router.delete("/:userID/delete", async function(request, response){
         response.status(200).redirect("/")
     }catch(error){
         console.log(error)
-        response.status(500).end("Bad request")
+        response.status(500).end("Internal Server Error")
     }
 })
 
@@ -105,37 +107,36 @@ router.put("/:userID/update", async function(request, response){
     }
     else{
         console.log(error)
-        response.status(500).end("Bad request")
+        response.status(500).end("Internal Server Error")
     }
     
 })
 
 router.get("/:userID/group/all", async function(request, response){
+    const userID = parseInt(request.params.userID)
+    const connection = await pool.getConnection()
     try{
-        const userID = parseInt(request.params.userID)
-        const connection = await pool.getConnection()
         const groupIDs = await mod.getGroupIDsFromUserID(userID)
         const query = "SELECT * FROM groupsTable WHERE groupID IN (?)"
         const availableGroups = await connection.query(query, [groupIDs])
+        connection.release()
         response.status(200).json(availableGroups)
 
     }catch(error){
+        connection.release()
         console.log(error)
-        response.status(500).end("Bad request")
+        response.status(500).end("Internal Server Error")
     }
 })
-
-
 
 router.get("/:userID/invitations", async function(request, response){
     try{
         const userID = parseInt(request.params.userID)
         const invitationsFromUserID = await mod.getInvitationsFromUserID(userID)
         response.status(200).json(invitationsFromUserID)
-    }catch(error)
-    {
+    }catch(error){
         console.log(error)
-        response.status(500).end("Bad request")
+        response.status(500).end("Internal Server Error")
     }
 })
 
@@ -147,7 +148,7 @@ router.get("/:userID/events", async function(request, response){
         response.status(200).json(eventsFromGroupIDs)
     }catch(error){
         console.log(error)
-        response.status(500).end("Bad request")
+        response.status(500).end("Internal Server Error")
     }
 })
 

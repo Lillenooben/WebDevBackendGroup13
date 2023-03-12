@@ -23,7 +23,7 @@ router.get("/:groupID/event/all", async function(request, response){
         response.status(200).json(eventsFromGroupID)
     }catch(error){
         console.log(error)
-        response.status(500).end("Bad request")
+        response.status(500).end("Internal Server Error")
     }
 })
 
@@ -34,27 +34,29 @@ router.get("/:groupID/members", async function(request, response){
         response.status(200).json(allMembersIDListFromGroupID)
     }catch(error){
         console.log(error)
-        response.status(500).end("Bad request")
+        response.status(500).end("Internal Server Error")
     }
 })
 
 router.post("/create", async function(request, response){
     const enteredGroupName = request.body.groupName
+    const connection = await pool.getConnection()
     try{
-        const connection = await pool.getConnection()
         const query = "INSERT INTO groupsTable (groupName) VALUES (?)"
         await connection.query(query, [enteredGroupName])
+        connection.release()
         response.redirect('/')
     }catch(error){
+        connection.release()
         console.log(error)
-        response.status(500).end("Bad request")
+        response.status(500).end("Internal Server Error")
     }
 })
 
 router.get("/:groupID", async function(request, response){
+    const connection = await pool.getConnection()
+    const groupID = parseInt(request.params.groupID)
     try{
-        const groupID = parseInt(request.params.groupID)
-        const connection = await pool.getConnection()
         /*let availableGroups = await mod.getGroupIDsFromUserID(userID)
         if(!availableGroups.includes(groupID)){
             throw "User group connection not found";
@@ -62,31 +64,39 @@ router.get("/:groupID", async function(request, response){
         //OLD CODE THAT AUTHORIZED USER ACCESS
         const query = "SELECT * FROM groupsTable WHERE groupID = ?"
         const groupFromGroupID = await connection.query(query, [groupID])
+        connection.release()
         response.status(200).json(groupFromGroupID)
 
     }catch(error){
+        connection.release()
         console.log(error)
-        response.status(500).end("Bad request")
+        response.status(500).end("Internal Server Error")
     }
 })
 
 router.post("/:groupID/event/create", async function(request, response){
     const groupID = parseInt(request.params.groupID)
-    const enteredEventTitle = request.body.eventTitle
+    /*const enteredEventTitle = request.body.eventTitle
     const enteredEventDesc = request.body.eventDesc
-    const enteredEventDate = request.body.eventDate
-    /*const enteredEventTitle = "TitleNew"
+    const enteredEventDate = request.body.eventDate*/
+    const enteredEventTitle = "TitleNew"
     const enteredEventDesc = "DescNew"
-    const enteredEventDate = "2023-03-06 13:00:00"*/
-    //CODE TO ADD DUMMY EVENTS
+    const enteredEventDate = "2023-03-06 13:00:00"
+    //CODE TO ADD DUMMY EVENTS SWAP WITH THE COMMENTED CODE AS NEEDED
+    const connection = await pool.getConnection()
     try{
-        const connection = await pool.getConnection()
+        
         const query = "INSERT INTO eventsTable (groupID, eventTitle, eventDesc, eventDate) VALUES (?,?,?,?)"
         await connection.query(query, [groupID, enteredEventTitle, enteredEventDesc, enteredEventDate])
+
+        await mod.createUserEventConnection(groupID)
+        
+        connection.release()
         response.redirect('/')
     }catch(error){
+        connection.release()
         console.log(error)
-        response.status(500).end("Bad request")
+        response.status(500).end("Internal Server Error")
     }
 })
 
@@ -100,7 +110,7 @@ router.put("/:groupID/update", async function(request, response){
         response.status(200).redirect("/")
     }catch(error){
         console.log(error)
-        response.status(500).end("Bad request")
+        response.status(500).end("Internal Server Error")
     }
 })
 
