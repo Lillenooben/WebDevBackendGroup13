@@ -24,26 +24,34 @@ export function getParsedIDs(objectArray){
 }
 
 export async function hashPassword(password){
-    bcrypt.hash(password, salt, async function(err, hash){
-        console.log("hashPassword: " + hash)
-        return hash
-    })
+    return new Promise((resolve, reject) => {
+        bcrypt.hash(password, salt, (err, hash) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(hash);
+          }
+        });
+    });
 }
 
 export async function addUser(username, password){
-    bcrypt.hash(password, salt, async function(err, hash){
-        console.log("hashPassword: " + hash)
-        try{
-            const connection = await pool.getConnection()
-            const query = "INSERT INTO usersTable (username, userPassword) VALUES (?,?)"
-            await connection.query(query, [username, hash])
-            return true
-        }catch(error){
-            console.log(error)
-            console.log(err)
-            return false
+    let didSucceed = false
+    const connection = await pool.getConnection()
+
+    try{
+        const hashedPassword = await hashPassword(password)
+        const query = "INSERT INTO usersTable (username, userPassword) VALUES (?,?)"
+        await connection.query(query, [username, hashedPassword])
+        didSucceed = true
+    }catch(error){
+        console.log(error)
+    } finally {
+        if (connection) {
+            connection.release()
         }
-    })
+        return didSucceed
+    }
 }
 
 export async function getUserByUserID(userID){
@@ -102,11 +110,25 @@ export async function updateUserData(userData){
 
 export async function compareLoginCredentials(username, password){
     const connection = await pool.getConnection()
-    const query = "SELECT userPassword FROM usersTable WHERE username = ?"
-    const hashedObjectFromDatabase = await connection.query(query, [username])
+    const query = "SELECT userPassword, userID FROM usersTable WHERE username = ?"
 
-    const hashedPassword = hashedObjectFromDatabase[0].userPassword
-    return bcrypt.compareSync(password, hashedPassword)
+    try {
+
+        const hashedObjectFromDatabase = await connection.query(query, [username])
+
+        const hashedPassword = hashedObjectFromDatabase[0].userPassword
+        
+        connection.release()
+        return {
+            success: bcrypt.compareSync(password, hashedPassword),
+            id: hashedObjectFromDatabase[0].userID
+        }
+
+    } catch (error) {
+        connection.release()
+        return {success: false}
+    }
+
 }
 
 export async function getInvitationsFromUserID(userID){

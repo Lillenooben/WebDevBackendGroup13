@@ -2,7 +2,7 @@
     import { navigate } from "svelte-routing"
 
     const clicked = () => {
-        navigate("group/1");
+        navigate("group/1")
     }
 </script>
 
