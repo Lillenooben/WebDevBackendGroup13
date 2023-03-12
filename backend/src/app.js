@@ -55,7 +55,8 @@ app.post("/login", async function(request, response){
     if(result.success){
         
         const payload = {
-            sub: result.id
+            sub: result.id,
+            username: username,
         }
 
         jwt.sign(payload, ACCESS_TOKEN_SECRET, function(error, accessToken){
