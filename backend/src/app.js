@@ -7,7 +7,7 @@ import {router as groupRouter} from './group-router.js'
 import {router as eventRouter} from './event-router.js'
 import * as mod from './globalFunctions.js'
 
-const ACCESS_TOKEN_SECRET = "sdkvjnaewrfjjljqwlvd"
+export const ACCESS_TOKEN_SECRET = "sdkvjnaewrfjjljqwlvd"
 
 const pool = createPool({
     host: "database",

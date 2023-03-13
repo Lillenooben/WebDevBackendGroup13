@@ -25,7 +25,7 @@ router.get("/:eventID", async function(request, response){
         response.status(200).json(eventFromEventID)
     }catch(error){
         console.log(error)
-        response.status(500).end("Bad request")
+        response.status(500).end("Internal Server Error")
     }
 })
 
@@ -40,7 +40,7 @@ router.put("/:eventID/update", async function(request, response){
         response.status(200).redirect("/")
     }catch(error){
         console.log(error)
-        response.status(500).end("Bad request")
+        response.status(500).end("Internal Server Error")
     }
 })
 
@@ -51,10 +51,8 @@ router.delete("/:eventID/delete", async function(request, response){
         response.status(200).redirect("/")
     }catch(error){
         console.log(error)
-        response.status(500).end("Bad request")
+        response.status(500).end("Internal Server Error")
     }
 })
-
-
 
 export {router}

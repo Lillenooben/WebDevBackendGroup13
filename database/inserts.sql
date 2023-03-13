@@ -1,11 +1,13 @@
 
 
-INSERT INTO usersTable (username, userPassword)
+/*INSERT INTO usersTable (username, userPassword)
 VALUES
     ("Jesper", "abc123"),
     ("Joakim", "abc123"),
     ("Axel", "abc456"),
-    ("Dummy", "abc789");
+    ("Dummy", "abc789");*/
+    --DO NOT USE ABOVE. INSTEAD ADD USERS THROUGH /user/create
+
 
 
 INSERT INTO groupsTable (groupName)
