@@ -1,6 +1,6 @@
 import {createPool} from 'mariadb'
 import bcrypt, { hash } from 'bcrypt'
-import * as appjs from './app.js'
+import {ACCESS_TOKEN_SECRET} from './app.js'
 import jwt from 'jsonwebtoken'
 
 const salt = "$2b$10$JuPOH8SVXG6GG7BDU92clu"
@@ -38,34 +38,45 @@ export async function hashPassword(password){
 }
 
 export function authorizeJWT(request){
-    const ACCESS_TOKEN_SECRET = appjs.ACCESS_TOKEN_SECRET
-    const authorizationHeaderValue = ""
-    const accessToken = ""
-    let result = false
+    let authorizationHeaderValue = ""
+    let accessToken = ""
+
+    let obj = {}
+
     try{
         authorizationHeaderValue = request.get("Authorization")
+        console.log("AuthorizationHeaderValue: " + authorizationHeaderValue)
         accessToken = authorizationHeaderValue.substring(7)
+        console.log("accessToken: " + accessToken)
+
+        jwt.verify(accessToken, ACCESS_TOKEN_SECRET, function(error, payload){
+            console.log("payload: ", payload)
+            console.log("Verify 1")
+            if(error){
+                console.log("Verify error")
+                obj = {
+                    succeeded: false,
+                    error: error
+                }
+            }else{
+                console.log("Verify success")
+                obj = {
+                    succeeded: true,
+                    payload: payload,
+                }
+                
+            }
+        })
+
     }catch(error){
-        return {
-            result: result,
+        console.log("try catch error")
+        obj = {
+            succeeded: false,
             error: error
         }
+    }finally{
+        return obj
     }
-
-    jwt.verify(accessToken, ACCESS_TOKEN_SECRET, function(error, payload){
-        if(error){
-            return {
-                result: result,
-                error: error
-            }
-        }else{
-            return {
-                result: result,
-                payload: payload
-            }
-        }
-    })
-
 }
 
 export async function addUser(username, password){
@@ -171,6 +182,18 @@ export async function createUserEventConnection(groupID){
     }
 }
 
+export async function createUserGroupConnection(userID, groupID, username, isOwner){
+    const connection = await pool.getConnection()
+    try{
+        const query = "INSERT INTO userGroupConTable (userID, groupID, nickname, isOwner, notifEnabled) VALUES (?,?,?,?,?)"
+        await connection.query(query, [userID, groupID, username, isOwner, true])
+        connection.release()
+    }catch(error){
+        connection.release()
+        console.log(error)
+    }
+}
+
 export async function compareLoginCredentials(username, password){
     const connection = await pool.getConnection()
     const query = "SELECT userPassword, userID FROM usersTable WHERE username = ?"
@@ -202,19 +225,29 @@ export async function getInvitationsFromUserID(userID){
     return invitationsByID
 }
 
-export async function inivtationResponse(userID, groupID, response){
-    const connection = await pool.getConnection()
-    let query = ""
-    if(response){
-        query = "SELECT username FROM usersTable WHERE userID = ?"
-        const usernameFromUserID = await connection.query(query, [userID])
-        const username = usernameFromUserID[0].username
+export async function inivtationResponse(groupID, userResponse){
 
-        query = "INSERT INTO userGroupConTable (userID, groupID, nickname, isOwner, notifEnabled) VALUES (?,?,?,?,?)"
-        await connection.query(query, [userID, groupID, username, false, true])
+    const jwtPayload = authorizeJWT(request)
+
+    if(jwtPayload.succeeded){
+        const connection = await pool.getConnection()
+        try{
+            if(userResponse){
+                await createUserGroupConnection(jwtPayload.payload.sub, groupID, jwtPayload.payload.username, false)
+            }
+            const query = "DELETE FROM invitationsTable WHERE userID = ? AND groupID = ?"
+            await connection.query(query, [jwtPayload.payload.sub, groupID])
+            connection.release()
+            response.status(201).end()
+        }catch(error){
+            connection.release()
+            console.log(error)
+            response.status(500).end("Internal Server Error")
+        }
+    }else{
+        console.log(jwtPayload.error)
+        response.status(401).end()
     }
-    query = "DELETE FROM invitationsTable WHERE userID = ? AND groupID = ?"
-    await connection.query(query, [userID, groupID])
 }
 
 export async function createInvitation(userID, groupID){
