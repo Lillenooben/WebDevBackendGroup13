@@ -39,17 +39,37 @@ router.get("/:groupID/members", async function(request, response){
 })
 
 router.post("/create", async function(request, response){
-    const enteredGroupName = request.body.groupName
-    const connection = await pool.getConnection()
-    try{
-        const query = "INSERT INTO groupsTable (groupName) VALUES (?)"
-        await connection.query(query, [enteredGroupName])
-        connection.release()
-        response.redirect('/')
-    }catch(error){
-        connection.release()
-        console.log(error)
-        response.status(500).end("Internal Server Error")
+
+    const jwtPayload = mod.authorizeJWT(request)
+
+    console.log("jwtPayload: ",jwtPayload)
+
+    if(jwtPayload.succeeded){
+        const enteredGroupName = request.body.groupName
+        const connection = await pool.getConnection()
+        try{
+            let query = "INSERT INTO groupsTable (groupName) VALUES (?)"
+            await connection.query(query, [enteredGroupName])
+    
+            query = "SELECT groupID FROM groupsTable ORDER BY groupID DESC LIMIT 1"
+    
+            const latestInsertedGroup = await connection.query(query)
+
+            console.log(latestInsertedGroup)
+    
+            const groupID = latestInsertedGroup[0].groupID
+    
+            await mod.createUserGroupConnection(jwtPayload.payload.sub, groupID, jwtPayload.payload.username, true)
+            connection.release()
+            response.status(201).json({newGroupID: groupID})
+        }catch(error){
+            connection.release()
+            console.log(error)
+            response.status(500).end("Internal Server Error")
+        }
+    }else{
+        console.log(jwtPayload.error)
+        response.status(401).end("Unauthorized")
     }
 })
 
@@ -92,7 +112,7 @@ router.post("/:groupID/event/create", async function(request, response){
         await mod.createUserEventConnection(groupID)
         
         connection.release()
-        response.redirect('/')
+        response.status(201).end()
     }catch(error){
         connection.release()
         console.log(error)
