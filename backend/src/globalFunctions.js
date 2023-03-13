@@ -1,5 +1,7 @@
 import {createPool} from 'mariadb'
 import bcrypt, { hash } from 'bcrypt'
+import * as appjs from './app.js'
+import jwt from 'jsonwebtoken'
 
 const salt = "$2b$10$JuPOH8SVXG6GG7BDU92clu"
 
@@ -33,6 +35,37 @@ export async function hashPassword(password){
           }
         });
     });
+}
+
+export function authorizeJWT(request){
+    const ACCESS_TOKEN_SECRET = appjs.ACCESS_TOKEN_SECRET
+    const authorizationHeaderValue = ""
+    const accessToken = ""
+    let result = false
+    try{
+        authorizationHeaderValue = request.get("Authorization")
+        accessToken = authorizationHeaderValue.substring(7)
+    }catch(error){
+        return {
+            result: result,
+            error: error
+        }
+    }
+
+    jwt.verify(accessToken, ACCESS_TOKEN_SECRET, function(error, payload){
+        if(error){
+            return {
+                result: result,
+                error: error
+            }
+        }else{
+            return {
+                result: result,
+                payload: payload
+            }
+        }
+    })
+
 }
 
 export async function addUser(username, password){
