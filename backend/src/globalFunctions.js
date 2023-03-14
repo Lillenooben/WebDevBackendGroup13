@@ -38,29 +38,20 @@ export async function hashPassword(password){
 }
 
 export function authorizeJWT(request){
-    let authorizationHeaderValue = ""
-    let accessToken = ""
-
-    let obj = {}
+    let result = {}
 
     try{
-        authorizationHeaderValue = request.get("Authorization")
-        console.log("AuthorizationHeaderValue: " + authorizationHeaderValue)
-        accessToken = authorizationHeaderValue.substring(7)
-        console.log("accessToken: " + accessToken)
+        const authorizationHeaderValue = request.get("Authorization")
+        const accessToken = authorizationHeaderValue.substring(7)
 
         jwt.verify(accessToken, ACCESS_TOKEN_SECRET, function(error, payload){
-            console.log("payload: ", payload)
-            console.log("Verify 1")
             if(error){
-                console.log("Verify error")
-                obj = {
+                result = {
                     succeeded: false,
                     error: error
                 }
             }else{
-                console.log("Verify success")
-                obj = {
+                result = {
                     succeeded: true,
                     payload: payload,
                 }
@@ -69,13 +60,12 @@ export function authorizeJWT(request){
         })
 
     }catch(error){
-        console.log("try catch error")
-        obj = {
+        result = {
             succeeded: false,
             error: error
         }
     }finally{
-        return obj
+        return result
     }
 }
 
@@ -187,10 +177,12 @@ export async function createUserGroupConnection(userID, groupID, username, isOwn
     try{
         const query = "INSERT INTO userGroupConTable (userID, groupID, nickname, isOwner, notifEnabled) VALUES (?,?,?,?,?)"
         await connection.query(query, [userID, groupID, username, isOwner, true])
-        connection.release()
     }catch(error){
-        connection.release()
         console.log(error)
+    }finally{
+        if (connection) {
+            connection.release()
+        }
     }
 }
 

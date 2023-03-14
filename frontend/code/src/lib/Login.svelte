@@ -60,16 +60,16 @@
 <form on:submit|preventDefault={login}>
 
     <div>
-        Username:
-        <input type="text" bind:value={username}>
+        <label for="username">Username: </label>
+        <input type="text" name="username" bind:value={username}>
     </div>
 
     <div>
-        Password:
-        <input type="password" bind:value={password}>
+        <label for="password">Password: </label>
+        <input type="password" name="password" bind:value={password}>
     </div>
 
-    <input type="submit" value="Login">
+    <button type="submit" class="submit-button">Login</button>
 
 </form>
 
@@ -78,5 +78,8 @@
 <style>
     .error-text {
         color: red
+    }
+    .submit-button {
+        margin-top: 0.5em;
     }
 </style>
