@@ -61,22 +61,31 @@ router.post("/create", async function(request, response){
 })
 
 router.get("/:groupID", async function(request, response){
-    const connection = await pool.getConnection()
-    const groupID = parseInt(request.params.groupID)
-    
-    try{
-        const query = "SELECT * FROM groupsTable WHERE groupID = ?"
-        const group = await connection.query(query, [groupID])
-        response.status(200).json(group)
 
-    }catch(error){
-        console.log(error)
-        response.status(500).json({error: "Internal Server Error"})
+    const authResult = mod.authorizeJWT(request)
 
-    }finally{
-        if (connection) {
-            connection.release()
+    if (authResult.succeeded) {
+
+        const connection = await pool.getConnection()
+        const groupID = parseInt(request.params.groupID)
+
+        try{
+            const query = "SELECT * FROM groupsTable WHERE groupID = ?"
+            const group = await connection.query(query, [groupID])
+            response.status(200).json(group)
+
+        }catch(error){
+            console.log(error)
+            response.status(500).json({error: "Internal Server Error"})
+
+        }finally{
+            if (connection) {
+                connection.release()
+            }
         }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
     }
 })
 
