@@ -8,7 +8,9 @@
     async function createGroup(){
         error = ""
 
-        const data = {groupName: groupName}
+        const data = {
+            groupName: groupName,
+        }
 
         try {
 
@@ -59,7 +61,7 @@
 
     <div>
         <label for="gimage">Group Image: </label>
-        <input type="file" name="gimage" />
+        <input type="file" accept="image/png, image/jpeg" name="gimage"/>
     </div>
 
     <button type="submit" class="submit-button">Create</button>

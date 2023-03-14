@@ -21,28 +21,6 @@ pool.on('error', function(error){
     console.log("Error from pool", error)
 })
 
-router.get("/:groupID/event/all", async function(request, response){
-    try{
-        const groupID = parseInt(request.params.groupID)
-        const eventsFromGroupID = await mod.getEventsFromGroupID(groupID)
-        response.status(200).json(eventsFromGroupID)
-    }catch(error){
-        console.log(error)
-        response.status(500).end("Internal Server Error")
-    }
-})
-
-router.get("/:groupID/members", async function(request, response){
-    try{
-        const groupID = parseInt(request.params.groupID)
-        const allMembersIDListFromGroupID = await mod.getUsersFromGroupID(groupID)
-        response.status(200).json(allMembersIDListFromGroupID)
-    }catch(error){
-        console.log(error)
-        response.status(500).end("Internal Server Error")
-    }
-})
-
 router.post("/create", async function(request, response){
 
     const authResult = mod.authorizeJWT(request)
@@ -85,21 +63,20 @@ router.post("/create", async function(request, response){
 router.get("/:groupID", async function(request, response){
     const connection = await pool.getConnection()
     const groupID = parseInt(request.params.groupID)
+    
     try{
-        /*let availableGroups = await mod.getGroupIDsFromUserID(userID)
-        if(!availableGroups.includes(groupID)){
-            throw "User group connection not found";
-        }*/
-        //OLD CODE THAT AUTHORIZED USER ACCESS
         const query = "SELECT * FROM groupsTable WHERE groupID = ?"
-        const groupFromGroupID = await connection.query(query, [groupID])
-        connection.release()
-        response.status(200).json(groupFromGroupID)
+        const group = await connection.query(query, [groupID])
+        response.status(200).json(group)
 
     }catch(error){
-        connection.release()
         console.log(error)
-        response.status(500).end("Internal Server Error")
+        response.status(500).json({error: "Internal Server Error"})
+
+    }finally{
+        if (connection) {
+            connection.release()
+        }
     }
 })
 
@@ -137,6 +114,28 @@ router.put("/:groupID/update", async function(request, response){
     try{
         await mod.updateGroupData(arrayOfGroupData)
         response.status(200).redirect("/")
+    }catch(error){
+        console.log(error)
+        response.status(500).end("Internal Server Error")
+    }
+})
+
+router.get("/:groupID/event/all", async function(request, response){
+    try{
+        const groupID = parseInt(request.params.groupID)
+        const eventsFromGroupID = await mod.getEventsFromGroupID(groupID)
+        response.status(200).json(eventsFromGroupID)
+    }catch(error){
+        console.log(error)
+        response.status(500).end("Internal Server Error")
+    }
+})
+
+router.get("/:groupID/members", async function(request, response){
+    try{
+        const groupID = parseInt(request.params.groupID)
+        const allMembersIDListFromGroupID = await mod.getUsersFromGroupID(groupID)
+        response.status(200).json(allMembersIDListFromGroupID)
     }catch(error){
         console.log(error)
         response.status(500).end("Internal Server Error")
