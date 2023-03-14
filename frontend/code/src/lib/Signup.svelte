@@ -67,21 +67,21 @@
 <form on:submit|preventDefault={createAcc}>
 
     <div>
-        Username:
-        <input type="text" bind:value={username}>
+        <label for="username">Username: </label>
+        <input type="text" name="username" bind:value={username}>
     </div>
 
     <div>
-        Password:
-        <input type="password" bind:value={password}>
+        <label for="password">Password: </label>
+        <input type="password" name="password" bind:value={password}>
     </div>
 
     <div>
-        Confirm password:
-        <input type="password" bind:value={confirmPassword}>
+        <label for="confirm">Confirm password: </label>
+        <input type="password" name="confirm" bind:value={confirmPassword}>
     </div>
 
-    <input type="submit" value="Create">
+    <button type="submit" class="submit-button">Create</button>
 
 </form>
 
@@ -92,5 +92,8 @@
     }
     p:last-of-type {
         margin-bottom: 1em;
+    }
+    .submit-button {
+        margin-top: 0.5em;
     }
 </style>

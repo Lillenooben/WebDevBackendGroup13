@@ -23,7 +23,7 @@ pool.on('error', function(error){
     console.log("Error from pool", error)
 })
 
-router.get("/all", async function(request, response){
+router.get("/getAll", async function(request, response){
     const connection = await pool.getConnection()
     try{
         const query = "SELECT * FROM usersTable ORDER BY userID"
@@ -73,6 +73,37 @@ router.post("/create", async function(request, response){
     
 })
 
+router.get("/groups", async function(request, response){
+    
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+        
+        const connection = await pool.getConnection()
+        try{
+            
+            const query = `SELECT userGroupConTable.groupID, groupsTable.groupName 
+                           FROM userGroupConTable 
+                           INNER JOIN groupsTable 
+                           ON userGroupConTable.groupID=groupsTable.groupID 
+                           WHERE userID = ?`
+            const groups = await connection.query(query, [authResult.payload.sub])
+            response.status(200).json({groups})
+    
+        }catch(error){
+            console.log(error)
+            response.status(500).json({error: "Internal Server Error"})
+        }finally{
+            if (connection) {
+                connection.release()
+            }
+        }
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
+    }
+    
+})
+
 router.get("/:userID", async function(request, response){
     const userID = parseInt(request.params.userID)
     try{
@@ -110,23 +141,6 @@ router.put("/:userID/update", async function(request, response){
         response.status(500).end("Internal Server Error")
     }
     
-})
-
-router.get("/:userID/group/all", async function(request, response){
-    const userID = parseInt(request.params.userID)
-    const connection = await pool.getConnection()
-    try{
-        const groupIDs = await mod.getGroupIDsFromUserID(userID)
-        const query = "SELECT * FROM groupsTable WHERE groupID IN (?)"
-        const availableGroups = await connection.query(query, [groupIDs])
-        connection.release()
-        response.status(200).json(availableGroups)
-
-    }catch(error){
-        connection.release()
-        console.log(error)
-        response.status(500).end("Internal Server Error")
-    }
 })
 
 router.get("/:userID/invitations", async function(request, response){

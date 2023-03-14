@@ -1,24 +1,41 @@
 <script>
-    import { navigate } from "svelte-routing"
+    import { Link } from "svelte-routing"
+    import { user } from "../user-store.js"
+    import Loader from "./Loader.svelte"
 
-    const clicked = () => {
-        navigate("group/1")
-    }
+    const fetchGroupsPromise = fetch("http://localhost:8080/user/groups", {
+        method: "GET",
+        headers: {
+            "Authorization": "Bearer "+$user.accessToken,
+        },
+    })
+
 </script>
 
-<main>
-    <h1>My Groups</h1>
-    <div class="group-card"><button on:click={clicked}>Placeholder group card</button></div>
-    <div class="group-card"><button on:click={clicked}>Placeholder group card</button></div>
-    <div class="group-card"><button on:click={clicked}>Placeholder group card</button></div>
-    <div class="group-card"><button on:click={clicked}>Placeholder group card</button></div>
-</main>
+<h1>My Groups</h1>
 
-<style>
-    .group-card {
-        margin: 1em;
-    }
-    .group-card button {
-        padding: 2em;
-    }
-</style>
+{#await fetchGroupsPromise}
+
+    <Loader/>
+
+{:then response}
+
+    {#await response.json() then response}
+
+            {#if response.groups.length < 1}
+                <p>You are currently not in any groups</p>
+            {/if}
+
+            {#each response.groups as group}
+                <div>
+                    <Link to="/group/{group.groupID}">{group.groupName}</Link>
+                </div>
+            {/each}
+
+    {/await}
+
+{:catch error}
+    
+    <p>Something went wrong, try again later.</p>
+
+{/await}
