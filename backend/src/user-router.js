@@ -108,7 +108,8 @@ router.get("/:userID", async function(request, response){
     const userID = parseInt(request.params.userID)
     try{
         const userFromUserID = await mod.getUserByUserID(userID)
-        response.status(200).json(userFromUserID)
+        const user = userFromUserID[0]
+        response.status(200).json(user)
     }catch(error){
         console.log(error)
         response.status(500).end("Internal Server Error")
