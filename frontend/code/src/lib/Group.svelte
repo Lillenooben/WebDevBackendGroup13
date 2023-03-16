@@ -1,4 +1,5 @@
 <script>
+    import { navigate } from "svelte-routing";
     import { user } from "../user-store.js"
     import Loader from "./Loader.svelte"
 
@@ -6,7 +7,8 @@
     let username = ""
 
     let loading = false
-    let responseMessage = ""
+    let inviteResponseMessage = ""
+    let leaveError = ""
 
     const fetchGroupPromise = fetch("http://localhost:8080/group/" + groupID, {
         method: "GET",
@@ -16,7 +18,7 @@
     })
 
     async function createInvite(){
-        responseMessage = ""
+        inviteResponseMessage = ""
         loading = true
 
         const data = {
@@ -33,13 +35,31 @@
         })
 
         if (response.status == 201) {
-            responseMessage = "Invitation sent!"
+            inviteResponseMessage = "Invitation sent!"
             username = ""
             loading = false
         } else {
             const body = await response.json()
-            responseMessage = body.error
+            inviteResponseMessage = body.error
             loading = false
+        }
+    }
+
+    async function leaveGroup(){
+        leaveError = ""
+
+        const response = await fetch("http://localhost:8080/group/" + groupID + "/leave", {
+            method: "DELETE",
+            headers: {
+                "Authorization": "Bearer "+$user.accessToken,
+            },
+        })
+
+        if (response.status == 204) {
+            navigate("../groups")
+
+        } else {
+            leaveError = "Something went wrong, reload and try again."
         }
     }
 
@@ -65,15 +85,18 @@
                     <Loader/>
                 {/if}
 
-                <p>{responseMessage}</p>
+                <p>{inviteResponseMessage}</p>
 
             <div>
                 <label for="username">Username: </label>
                 <input type="text" name="username" bind:value={username}>
             </div>
             
-            <button type="submit" class="submit-button">Create</button>
+            <button type="submit" class="submit-button">Send invite</button>
         </form>
+
+        <button on:click={leaveGroup}>Leave Group</button> <!--TODO: Hide for owner OR change to delete group?-->
+        <p class="error-text">{leaveError}</p>
 
         <p>TODO: Rest of the page :)</p>
 
@@ -87,10 +110,14 @@
 {/await}
 
 <style>
+    .error-text {
+        color: red
+    }
     .submit-button {
         margin-top: 0.5em;
     }
     form {
         background-color: rgb(153, 152, 152);
+        margin-bottom: 1em;
     }
 </style>

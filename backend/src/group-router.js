@@ -183,6 +183,35 @@ router.delete("/:groupID/invite", async function(request, response){
 
 })
 
+router.delete("/:groupID/leave", async function(request, response){
+
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        const connection = await pool.getConnection()
+
+        try{
+            const groupID = parseInt(request.params.groupID)
+            const query = "DELETE FROM userGroupConTable WHERE userID = ? AND groupID = ?"
+            await connection.query(query, [authResult.payload.sub, groupID])
+            response.status(204).end()
+
+        }catch(error){
+            console.log(error)
+            response.status(500).json({error: "Internal Server Error"})
+
+        }finally{
+            if (connection) {
+                connection.release()
+            }
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
+    }
+})
+
 router.get("/:groupID", async function(request, response){
 
     const authResult = mod.authorizeJWT(request)
