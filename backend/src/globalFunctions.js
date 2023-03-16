@@ -155,7 +155,7 @@ export async function createUserEventConnection(groupID){
     try{
         let query = "SELECT userID FROM userGroupConTable WHERE groupID = ?"
         const usersInGroup = await connection.query(query, [groupID])
-        const userIDsArray = await getParsedIDs(usersInGroup)
+        const userIDsArray = getParsedIDs(usersInGroup)
 
         query = "SELECT eventID FROM eventsTable WHERE groupID = ? ORDER BY eventID DESC"
         const eventIDsFromGroupID = await connection.query(query, [groupID])

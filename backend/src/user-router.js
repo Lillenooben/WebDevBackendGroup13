@@ -104,16 +104,26 @@ router.get("/groups", async function(request, response){
     
 })
 
-router.get("/:userID", async function(request, response){
-    const userID = parseInt(request.params.userID)
-    try{
-        const userFromUserID = await mod.getUserByUserID(userID)
-        const user = userFromUserID[0]
-        response.status(200).json(user)
-    }catch(error){
-        console.log(error)
-        response.status(500).end("Internal Server Error")
+router.get("/get", async function(request, response){
+
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        try{
+            const userFromUserID = await mod.getUserByUserID(authResult.payload.sub)
+            const user = userFromUserID[0]
+            response.status(200).json(user)
+            
+        }catch(error){
+            console.log(error)
+            response.status(500).end("Internal Server Error")
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
     }
+
 })
 
 router.delete("/:userID/delete", async function(request, response){

@@ -36,8 +36,8 @@ router.post("/create", async function(request, response){
 
         const connection = await pool.getConnection()
         try{
-            let query = "INSERT INTO groupsTable (groupName) VALUES (?)"
-            await connection.query(query, [enteredGroupName])
+            let query = "INSERT INTO groupsTable (ownerID, groupName) VALUES (?, ?)"
+            await connection.query(query, [authResult.payload.sub, enteredGroupName])
     
             query = "SELECT groupID FROM groupsTable ORDER BY groupID DESC LIMIT 1"
     
@@ -58,6 +58,129 @@ router.post("/create", async function(request, response){
         console.log(authResult.error)
         response.status(401).end({error: "Unauthorized"})
     }
+})
+
+router.get("/invites", async function(request, response){
+
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        const connection = await pool.getConnection()
+
+        try{
+            const query = `SELECT invitationsTable.groupID, groupsTable.groupName 
+                           FROM invitationsTable 
+                           INNER JOIN groupsTable 
+                           ON invitationsTable.groupID=groupsTable.groupID 
+                           WHERE userID = ?`
+            const invites = await connection.query(query, authResult.payload.sub)
+            response.status(200).json({invites})
+
+        }catch(error){
+            console.log(error)
+            response.status(500).json({error: "Internal Server Error"})
+
+        }finally{
+            if (connection) {
+                connection.release()
+            }
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
+    }
+
+})
+
+// TODO: Make sure the person sending the request is the owner of the group
+//       Also make sure you cannot invite users who are already members
+router.post("/:groupID/invite", async function(request, response){
+
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        const connection = await pool.getConnection()
+
+        try{
+            const username = request.body.username
+            let query = "SELECT userID FROM usersTable WHERE username = ?"
+            const result = await connection.query(query, username)
+
+            const groupID = parseInt(request.params.groupID)
+            query = "INSERT INTO invitationsTable (userID, groupID) VALUES (?, ?)"
+            await connection.query(query, [result[0].userID, groupID])
+
+            response.status(201).end()
+
+        }catch(error){
+            if (error.code == "ER_DUP_ENTRY") {
+                response.status(400).json({error: "User already invited"})
+            } else {
+                response.status(500).json({error: "Internal Server Error"})
+            }
+
+        }finally{
+            if (connection) {
+                connection.release()
+            }
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
+    }
+
+})
+
+router.post("/:groupID/invite/accept", async function(request, response){
+
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        try{
+            mod.createUserGroupConnection(authResult.payload.sub, request.params.groupID, authResult.payload.username, false)
+            response.status(201).end()
+        
+        }catch(error){
+            console.log(error)
+            response.status(500).json({error: "Internal Server Error"})
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
+    }
+})
+
+router.delete("/:groupID/invite", async function(request, response){
+
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        const connection = await pool.getConnection()
+
+        try{
+            const groupID = parseInt(request.params.groupID)
+            const query = "DELETE FROM invitationsTable WHERE userID = ? AND groupID = ?"
+            await connection.query(query, [authResult.payload.sub, groupID])
+            response.status(204).end()
+
+        }catch(error){
+            console.log(error)
+            response.status(500).json({error: "Internal Server Error"})
+
+        }finally{
+            if (connection) {
+                connection.release()
+            }
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
+    }
+
 })
 
 router.get("/:groupID", async function(request, response){
