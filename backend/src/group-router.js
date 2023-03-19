@@ -295,12 +295,12 @@ router.get("/:groupID", async function(request, response){
 
 router.post("/:groupID/event/create", async function(request, response){
     const groupID = parseInt(request.params.groupID)
-    /*const enteredEventTitle = request.body.eventTitle
+    const enteredEventTitle = request.body.eventTitle
     const enteredEventDesc = request.body.eventDesc
-    const enteredEventDate = request.body.eventDate*/
-    const enteredEventTitle = "TitleNew"
-    const enteredEventDesc = "DescNew"
-    const enteredEventDate = "2023-03-06 13:00:00"
+    const enteredEventDate = request.body.eventDate
+    //const enteredEventTitle = "TitleNew"
+    //const enteredEventDesc = "DescNew"
+    //const enteredEventDate = "2023-03-06 13:00:00"
     //CODE TO ADD DUMMY EVENTS SWAP WITH THE COMMENTED CODE AS NEEDED
     const connection = await pool.getConnection()
     try{

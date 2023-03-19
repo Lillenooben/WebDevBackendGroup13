@@ -69,6 +69,7 @@ app.post("/login", async function(request, response){
                 response.status(200).json({
                     access_token: accessToken,
                     type: "bearer",
+                    userID: result.id
                 })
             }
 

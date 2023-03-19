@@ -87,8 +87,8 @@ router.get("/groups", async function(request, response){
                            INNER JOIN groupsTable 
                            ON userGroupConTable.groupID=groupsTable.groupID 
                            WHERE userID = ?`
-            const groups = await connection.query(query, [authResult.payload.sub])
-            response.status(200).json({groups})
+            const groupsArray = await connection.query(query, [authResult.payload.sub])
+            response.status(200).json({groupsArray})
     
         }catch(error){
             console.log(error)
@@ -251,9 +251,11 @@ router.get("/:userID/invitations", async function(request, response){
 router.get("/:userID/events", async function(request, response){
     try{
         const userID = parseInt(request.params.userID)
+        console.log("userID: ", userID)
         const groupIDs = await mod.getGroupIDsFromUserID(userID)
-        const eventsFromGroupIDs = await mod.getEventsFromMultipleGroups(groupIDs)
-        response.status(200).json(eventsFromGroupIDs)
+        const eventsArray = await mod.getEventsFromMultipleGroups(groupIDs)
+        console.log(eventsArray)
+        response.status(200).json({eventsArray})
     }catch(error){
         console.log(error)
         response.status(500).end("Internal Server Error")
