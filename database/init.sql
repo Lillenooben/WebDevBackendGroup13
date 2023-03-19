@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS usersTable (
     userID INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(14) unique,
     userPassword CHAR(72),
-    profilePicture BLOB,
+    profileImage MEDIUMTEXT,
     isActive BOOLEAN
 );
 
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS groupsTable (
     groupID INT PRIMARY KEY AUTO_INCREMENT,
     ownerID INT,
     groupName VARCHAR(20),
-    groupImage BLOB,
+    groupImage MEDIUMTEXT,
     FOREIGN KEY (ownerID) REFERENCES usersTable(userID) ON DELETE CASCADE
 );
 

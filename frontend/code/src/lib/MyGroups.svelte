@@ -12,7 +12,7 @@
         },
     })
 
-    const fetchInvitesPromise = fetch("http://localhost:8080/group/invites", {
+    let fetchInvitesPromise = fetch("http://localhost:8080/group/invites", {
         method: "GET",
         headers: {
             "Authorization": "Bearer "+$user.accessToken,
@@ -27,13 +27,26 @@
             },
         })
 
-        rejectInvitation(groupID)
+        fetch("http://localhost:8080/group/" + groupID + "/invite", {
+            method: "DELETE",
+            headers: {
+                "Authorization": "Bearer "+$user.accessToken,
+            },
+        })
+
         navigate(`/group/${groupID}`)
     }
 
     async function rejectInvitation(groupID){
         fetch("http://localhost:8080/group/" + groupID + "/invite", {
             method: "DELETE",
+            headers: {
+                "Authorization": "Bearer "+$user.accessToken,
+            },
+        })
+
+        fetchInvitesPromise = fetch("http://localhost:8080/group/invites", {
+            method: "GET",
             headers: {
                 "Authorization": "Bearer "+$user.accessToken,
             },
@@ -47,7 +60,7 @@
 <section class="dropdown">
     <button on:click={() => menuOpen = !menuOpen}>{!menuOpen ? "Show pending invitations" : "Hide pending invitations"}</button>
       
-    <div id="myDropdown" class:show={menuOpen} class="dropdown-content">		
+    <div class:show={menuOpen} class="dropdown-content">		
     	{#await fetchInvitesPromise}
             <Loader/>
         {:then response}
@@ -106,7 +119,7 @@
         text-align: right;
     }
     .accept-button {
-        background-color: rgb(0, 179, 0);
+        background-color: rgb(75, 235, 27);
         padding: 0.5em;
     }
     .reject-button {
@@ -114,16 +127,14 @@
         padding: 0.5em;
     }
     .dropdown {
-      position: relative;
-      display: inline-block;
+        position: relative;
+        display: inline-block;
     }  
     .dropdown-content {
-      display: none;
-      position: absolute;
-      background-color: #e7e7e7;
-      min-width: 250px;
-      border: 1px solid #ddd;
-      z-index: 1;
+        display: none;
+        background-color: #e7e7e7;
+        border: 1px solid #ddd;
+        z-index: 1;
     }
     .show {
         display:block;

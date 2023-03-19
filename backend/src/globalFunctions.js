@@ -75,8 +75,8 @@ export async function addUser(username, password){
 
     try{
         const hashedPassword = await hashPassword(password)
-        const query = "INSERT INTO usersTable (username, userPassword) VALUES (?,?)"
-        await connection.query(query, [username, hashedPassword])
+        const query = "INSERT INTO usersTable (username, userPassword, profileImage, isActive) VALUES (?,?,?,?)"
+        await connection.query(query, [username, hashedPassword, "", true])
         didSucceed = true
     }catch(error){
         console.log(error)

@@ -5,20 +5,39 @@
     let groupName = ""
     let error = ""
 
+
+    let fileInput
+    let files
+    let avatar
+
+    function getBase64(image) {
+        const reader = new FileReader()
+        reader.readAsDataURL(image)
+        reader.onload = e => {
+            avatar = e.target.result
+        }
+    }
+
     async function createGroup(){
         error = ""
 
         const data = {
             groupName: groupName,
         }
-        
+
+        if(avatar){
+            data['imageData'] = avatar
+        } else {
+            data['imageData'] = ""
+        }
+
         try {
 
             const response = await fetch("http://localhost:8080/group/create", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-					"Authorization": "Bearer "+$user.accessToken,
+                    "Authorization": "Bearer "+$user.accessToken,
                 },
                 body: JSON.stringify(data)
             })
@@ -43,6 +62,7 @@
         }catch(error){
             console.log(error)
         }
+
     }
 
 </script>
@@ -50,18 +70,24 @@
 
 <h1>Create Group</h1>
 
+{#if avatar}
+    <img class="avatar" src={avatar} alt="avatar"/>
+{:else}
+    <img class="avatar" src="/groupAvatar.png" alt="placeholder avatar"/>
+{/if}
+
 <p class="error-text">{error}</p>
 
 <form on:submit|preventDefault={createGroup}>
 
     <div>
-        <label for="gname">Group Name: </label>
-        <input type="text" id="gname" name="gname" bind:value={groupName}/>
+        <label for="gimage">Group Image: </label>
+        <input type="file" accept="image/jpeg, image/png" name="gimage" bind:files bind:this={fileInput} on:change={() => getBase64(files[0])}/>
     </div>
 
     <div>
-        <label for="gimage">Group Image: </label>
-        <input type="file" accept="image/png, image/jpeg" name="gimage"/>
+        <label for="gname">Group Name: </label>
+        <input type="text" name="gname" bind:value={groupName}/>
     </div>
 
     <button type="submit" class="submit-button">Create</button>
@@ -69,10 +95,17 @@
 
 
 <style>
+    .avatar {
+        object-fit: cover;
+        border: 3px solid #213547;
+        border-radius: 50%;
+        height: 100px;
+        width: 100px;
+    }
     .error-text {
         color: red
     }
-    #gname {
+    input[type=text] {
         width: 19.1em;
         padding: 8px 14px;
         margin: 8px 0;

@@ -1,5 +1,6 @@
 <script>
     import { navigate } from "svelte-routing";
+    import { loop_guard } from "svelte/internal";
     import { user } from "../user-store.js"
     import Loader from "./Loader.svelte"
 
@@ -73,9 +74,14 @@
 {:then response}
 
     {#await response.json() then response}
+    
+        <h1>{response.group.groupName}</h1>
 
-        <h1>{response[0].groupName}</h1>
-        <img alt="Group Pic"> <!--Placeholder-->
+        {#if response.group.groupImage == ""}
+            <img src="/groupAvatar.png" class="avatar" alt="Group Avatar">
+        {:else}
+            <img src={response.group.groupImage} class="avatar" alt="Group Avatar">
+        {/if}
         <button>Edit group (owner)</button>
 
         <form on:submit|preventDefault={createInvite}> <!-- only show if user = owner -->
@@ -110,6 +116,13 @@
 {/await}
 
 <style>
+    .avatar {
+        object-fit: cover;
+        border: 3px solid #213547;
+        border-radius: 50%;
+        height: 100px;
+        width: 100px;
+    }
     .error-text {
         color: red
     }

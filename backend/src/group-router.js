@@ -27,17 +27,18 @@ router.post("/create", async function(request, response){
 
     if(authResult.succeeded){
 
+        const enteredImage = request.body.imageData
         const enteredGroupName = request.body.groupName
-
+        
         if (enteredGroupName.length < MIN_GROUPNAME_LEN || enteredGroupName.length > MAX_GROUPNAME_LEN) {
             response.status(400).json({error: "Group name must be between " + MIN_GROUPNAME_LEN + " and " + MAX_GROUPNAME_LEN + " characters"})
             return
-        }
+        } 
 
         const connection = await pool.getConnection()
         try{
-            let query = "INSERT INTO groupsTable (ownerID, groupName) VALUES (?, ?)"
-            await connection.query(query, [authResult.payload.sub, enteredGroupName])
+            let query = "INSERT INTO groupsTable (ownerID, groupName, groupImage) VALUES (?, ?, ?)"
+            await connection.query(query, [authResult.payload.sub, enteredGroupName, enteredImage])
     
             query = "SELECT groupID FROM groupsTable ORDER BY groupID DESC LIMIT 1"
     
@@ -47,8 +48,10 @@ router.post("/create", async function(request, response){
     
             await mod.createUserGroupConnection(authResult.payload.sub, groupID, authResult.payload.username, true)
             response.status(201).json({newGroupID: groupID})
+
         }catch(error){
             response.status(500).end({error: "Internal Server Error"})
+            
         }finally{
             if (connection) {
                 connection.release()
@@ -117,6 +120,8 @@ router.post("/:groupID/invite", async function(request, response){
         }catch(error){
             if (error.code == "ER_DUP_ENTRY") {
                 response.status(400).json({error: "User already invited"})
+            } else if (error.code = "ER_SP_FETCH_NO_DATA") {
+                response.status(400).json({error: "User not found"})
             } else {
                 response.status(500).json({error: "Internal Server Error"})
             }
@@ -224,7 +229,8 @@ router.get("/:groupID", async function(request, response){
         try{
             const query = "SELECT * FROM groupsTable WHERE groupID = ?"
             const group = await connection.query(query, [groupID])
-            response.status(200).json(group)
+
+            response.status(200).json({group:group[0]})
 
         }catch(error){
             console.log(error)

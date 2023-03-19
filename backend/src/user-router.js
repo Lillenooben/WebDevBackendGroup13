@@ -117,7 +117,7 @@ router.get("/get", async function(request, response){
             
         }catch(error){
             console.log(error)
-            response.status(500).end("Internal Server Error")
+            response.status(500).json({error: "Internal Server Error"})
         }
 
     } else {
@@ -126,6 +126,87 @@ router.get("/get", async function(request, response){
 
 })
 
+router.put("/avatar", async function(request, response){
+
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        const enteredImage = request.body.imageData
+        const connection = await pool.getConnection()
+
+        try{
+            const query = "UPDATE usersTable SET profileImage = ? WHERE userID = ?"
+            await connection.query(query, [enteredImage, authResult.payload.sub])
+            response.status(200).end()
+
+        }catch(error){
+            console.log(error)
+            response.status(500).json({error: "Internal Server Error"})
+
+        }finally{
+            if (connection) {
+                connection.release()
+            }
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
+    }
+})
+
+router.put("/password", async function(request, response){
+
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        const body = request.body
+
+        if (body.newPw.length < MIN_PASSWORD_LEN || body.newPw.length > MAX_PASSWORD_LEN) {
+            response.status(400).json({error: "Password must be between " + MIN_PASSWORD_LEN + " and " + MAX_PASSWORD_LEN + " characters"})
+            return
+        }
+
+        if (body.newPw != body.confPw) {
+            response.status(400).json({error: "Confirmation does not match"})
+            return
+        }
+
+        const connection = await pool.getConnection()
+        
+        try{
+            let query = "SELECT userPassword FROM usersTable WHERE userID = ?"
+            const oldPassword = await connection.query(query, [authResult.payload.sub])
+            const enteredOldPwHash = await mod.hashPassword(body.oldPw)
+
+            if (oldPassword[0].userPassword != enteredOldPwHash) {
+                response.status(400).json({error: "Old password is incorrect"})
+                return
+            }
+
+            const enteredNewPwHash = await mod.hashPassword(body.newPw)
+            query = "UPDATE usersTable SET userPassword = ? WHERE userID = ?"
+            await connection.query(query, [enteredNewPwHash, authResult.payload.sub])
+
+            response.status(200).end()
+
+        }catch(error){
+            console.log(error)
+            response.status(500).json({error: "Internal Server Error"})
+
+        }finally{
+            if (connection) {
+                connection.release()
+            }
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
+    }
+})
+
+// unused
 router.delete("/:userID/delete", async function(request, response){
     const userID = parseInt(request.params.userID)
     try{
@@ -137,6 +218,7 @@ router.delete("/:userID/delete", async function(request, response){
     }
 })
 
+// unused
 router.put("/:userID/update", async function(request, response){
     const userID = parseInt(request.params.userID)
     const updatedUsername = request.body.username
@@ -154,6 +236,7 @@ router.put("/:userID/update", async function(request, response){
     
 })
 
+// unused
 router.get("/:userID/invitations", async function(request, response){
     try{
         const userID = parseInt(request.params.userID)
