@@ -75,8 +75,8 @@ export async function addUser(username, password){
 
     try{
         const hashedPassword = await hashPassword(password)
-        const query = "INSERT INTO usersTable (username, userPassword) VALUES (?,?)"
-        await connection.query(query, [username, hashedPassword])
+        const query = "INSERT INTO usersTable (username, userPassword, profileImage, isActive) VALUES (?,?,?,?)"
+        await connection.query(query, [username, hashedPassword, "", true])
         didSucceed = true
     }catch(error){
         console.log(error)
@@ -155,7 +155,7 @@ export async function createUserEventConnection(groupID){
     try{
         let query = "SELECT userID FROM userGroupConTable WHERE groupID = ?"
         const usersInGroup = await connection.query(query, [groupID])
-        const userIDsArray = await getParsedIDs(usersInGroup)
+        const userIDsArray = getParsedIDs(usersInGroup)
 
         query = "SELECT eventID FROM eventsTable WHERE groupID = ? ORDER BY eventID DESC"
         const eventIDsFromGroupID = await connection.query(query, [groupID])

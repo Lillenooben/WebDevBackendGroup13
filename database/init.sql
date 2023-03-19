@@ -2,14 +2,16 @@ CREATE TABLE IF NOT EXISTS usersTable (
     userID INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(14) unique,
     userPassword CHAR(72),
-    profilePicture BLOB,
+    profileImage MEDIUMTEXT,
     isActive BOOLEAN
 );
 
 CREATE TABLE IF NOT EXISTS groupsTable (
     groupID INT PRIMARY KEY AUTO_INCREMENT,
+    ownerID INT,
     groupName VARCHAR(20),
-    groupImage BLOB
+    groupImage MEDIUMTEXT,
+    FOREIGN KEY (ownerID) REFERENCES usersTable(userID) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS userGroupConTable (
@@ -25,6 +27,7 @@ CREATE TABLE IF NOT EXISTS userGroupConTable (
 CREATE TABLE IF NOT EXISTS invitationsTable (
     userID INT,
     groupID INT,
+    UNIQUE (userID, groupID),
     FOREIGN KEY (userID) REFERENCES usersTable(userID) ON DELETE CASCADE,
     FOREIGN KEY (groupID) REFERENCES groupsTable(groupID) ON DELETE CASCADE
 );

@@ -52,14 +52,15 @@
     transition: filter 300ms;
   }
   .logo:hover {
-    filter: drop-shadow(0 0 1em #464647ec);
+    filter: drop-shadow(5px 5px 10px #464647ec);
   }
   #navigation {
-    background-color: #dfdfdfec;
+    background-color: #92A1B3;
     display: flex;
     font-size: large;
     align-items: center;
     gap: 40px;
+    border-bottom: 1px solid #213547;
   }
   #layout {
     position: absolute;
