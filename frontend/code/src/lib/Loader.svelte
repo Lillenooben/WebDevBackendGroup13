@@ -2,8 +2,8 @@
 
 <style>
     .loader {
-        border: 8px solid #dadada;
-        border-top: 8px solid #6d6d6d;
+        border: 8px solid #92A1B3;
+        border-top: 8px solid #213547;
         border-radius: 50%;
         width: 20px;
         height: 20px;
