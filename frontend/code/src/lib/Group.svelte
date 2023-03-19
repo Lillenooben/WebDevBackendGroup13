@@ -1,6 +1,5 @@
 <script>
     import { navigate } from "svelte-routing";
-    import { loop_guard } from "svelte/internal";
     import { user } from "../user-store.js"
     import Loader from "./Loader.svelte"
 
@@ -9,7 +8,7 @@
 
     let loading = false
     let inviteResponseMessage = ""
-    let leaveError = ""
+    let deleteError = ""
 
     const fetchGroupPromise = fetch("http://localhost:8080/group/" + groupID, {
         method: "GET",
@@ -47,7 +46,7 @@
     }
 
     async function leaveGroup(){
-        leaveError = ""
+        deleteError = ""
 
         const response = await fetch("http://localhost:8080/group/" + groupID + "/leave", {
             method: "DELETE",
@@ -60,7 +59,27 @@
             navigate("../groups")
 
         } else {
-            leaveError = "Something went wrong, reload and try again."
+            deleteError = "Something went wrong, reload and try again."
+        }
+    }
+
+    async function deleteGroup() {
+        if (!confirm("Are you sure you wish to delete the group? \nThis cannot be undone!")) {
+            return
+        }
+
+        const response = await fetch("http://localhost:8080/group/" + groupID + "/delete", {
+            method: "DELETE",
+            headers: {
+                "Authorization": "Bearer "+$user.accessToken,
+            },
+        })
+
+        if (response.status == 204) {
+            navigate("../groups")
+
+        } else {
+            deleteError = "Something went wrong, reload and try again."
         }
     }
 
@@ -74,37 +93,42 @@
 {:then response}
 
     {#await response.json() then response}
-    
-        <h1>{response.group.groupName}</h1>
 
         {#if response.group.groupImage == ""}
             <img src="/groupAvatar.png" class="avatar" alt="Group Avatar">
         {:else}
             <img src={response.group.groupImage} class="avatar" alt="Group Avatar">
         {/if}
-        <button>Edit group (owner)</button>
 
-        <form on:submit|preventDefault={createInvite}> <!-- only show if user = owner -->
-            <h2>Add member</h2>
+        <h1 id="title">{response.group.groupName}</h1>
 
-                {#if loading}
-                    <Loader/>
-                {/if}
+        {#if response.isOwner}
+            <button>Edit group (owner)</button>
 
-                <p>{inviteResponseMessage}</p>
+            <form on:submit|preventDefault={createInvite}> <!--TODO: make it look nicer-->
+                <h2>Add member</h2>
 
-            <div>
-                <label for="username">Username: </label>
-                <input type="text" name="username" bind:value={username}>
-            </div>
-            
-            <button type="submit" class="submit-button">Send invite</button>
-        </form>
+                    {#if loading}
+                        <Loader/>
+                    {/if}
 
-        <button on:click={leaveGroup}>Leave Group</button> <!--TODO: Hide for owner OR change to delete group?-->
-        <p class="error-text">{leaveError}</p>
+                    <p>{inviteResponseMessage}</p>
 
-        <p>TODO: Rest of the page :)</p>
+                <div>
+                    <label for="username">Username: </label>
+                    <input type="text" name="username" bind:value={username}>
+                </div>
+                
+                <button type="submit" class="submit-button">Send invite</button>
+            </form>
+
+            <button on:click={deleteGroup}>Delete Group</button>
+        {:else}
+            <button on:click={leaveGroup}>Leave Group</button> 
+        {/if}
+        <p class="error-text">{deleteError}</p>
+
+        <p>TODO: Rest of the page</p>
 
     {/await}
 
@@ -122,6 +146,10 @@
         border-radius: 50%;
         height: 100px;
         width: 100px;
+        margin-top: 1em;
+    }
+    #title {
+        margin-top: 0.2em;
     }
     .error-text {
         color: red

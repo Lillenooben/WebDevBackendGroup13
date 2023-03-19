@@ -218,7 +218,7 @@
     }  
     .dropdown-content {
         display: none;
-        background-color: #e7e7e7;
+        background-color: #92A1B3;
         border: 1px solid #ddd;
     }
     .show {

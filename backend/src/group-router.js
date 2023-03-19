@@ -217,6 +217,39 @@ router.delete("/:groupID/leave", async function(request, response){
     }
 })
 
+router.delete("/:groupID/delete", async function(request, response){
+
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        const connection = await pool.getConnection()
+
+        try{
+            const groupID = parseInt(request.params.groupID)
+            const query = "DELETE FROM groupsTable WHERE groupID = ? AND ownerID = ?"
+            await connection.query(query, [groupID, authResult.payload.sub])
+            response.status(204).end()
+
+        }catch(error){
+            console.log(error)
+            if (error.code = "ER_SP_FETCH_NO_DATA") {
+                response.status(404).json({error: "Group and owner combination not found"})
+                return
+            }
+            response.status(500).json({error: "Internal Server Error"})
+
+        }finally{
+            if (connection) {
+                connection.release()
+            }
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
+    }
+})
+
 router.get("/:groupID", async function(request, response){
 
     const authResult = mod.authorizeJWT(request)
@@ -230,10 +263,23 @@ router.get("/:groupID", async function(request, response){
             const query = "SELECT * FROM groupsTable WHERE groupID = ?"
             const group = await connection.query(query, [groupID])
 
-            response.status(200).json({group:group[0]})
+            if (group.length == 0) {
+                throw "ER_SP_FETCH_NO_DATA"
+            }
+
+            let isOwner = false
+            if (group[0].ownerID == authResult.payload.sub) {
+                isOwner = true
+            }
+
+            response.status(200).json({group:group[0], isOwner: isOwner})
 
         }catch(error){
             console.log(error)
+            if (error == "ER_SP_FETCH_NO_DATA") {
+                response.status(404).json({error: "Group not found"})
+                return
+            }
             response.status(500).json({error: "Internal Server Error"})
 
         }finally{

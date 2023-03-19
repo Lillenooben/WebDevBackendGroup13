@@ -1,5 +1,5 @@
 <script>
-    import { Link, navigate } from "svelte-routing"
+    import { navigate } from "svelte-routing"
     import { user } from "../user-store.js"
     import Loader from "./Loader.svelte"
 
@@ -72,7 +72,7 @@
                     <p>check back later!</p>
                 {:else}
                     {#each response.invites as invite}
-                        <div class="dropdown-row"> <!--TODO: Figure out how to make the rows update when pressing buttons-->
+                        <div class="dropdown-row">
                             {invite.groupName}
                             <button on:click={() => acceptInvitation(invite.groupID)} class="accept-button">&#10004;</button>
                             <button on:click={() => rejectInvitation(invite.groupID)} class="reject-button">X</button>
@@ -99,13 +99,24 @@
                 <p>You are currently not in any groups</p>
 
             {:else}
-                {#each response.groups as group}
-                    <div>
-                        <Link to="/group/{group.groupID}">{group.groupName}</Link>
-                    </div>
-                {/each}
-            {/if}
+                <section class="card-wrapper">
+                    {#each response.groups as group}
 
+                        <button class="group-card" on:click={() => navigate(`/group/${group.groupID}`)}>
+                            
+                            {#if group.groupImage == ""}
+                                <img class="avatar" src="/groupAvatar.png" alt="placeholder avatar"/>
+                            {:else}
+                                <img class="avatar" src={group.groupImage} alt="avatar"/>
+                            {/if}
+
+                            <h2 class="group-name">{group.groupName}</h2>
+
+                        </button>
+
+                    {/each}
+                </section>
+            {/if}
     {/await}
 
 {:catch error}
@@ -132,11 +143,50 @@
     }  
     .dropdown-content {
         display: none;
-        background-color: #e7e7e7;
+        background-color: #92A1B3;
         border: 1px solid #ddd;
-        z-index: 1;
     }
     .show {
         display:block;
-    }	
+    }
+    .card-wrapper {
+        display: flex;
+        margin: 0 auto;
+        width: 60%;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .group-card {
+        display: flex;
+        column-gap: 4em;
+        border-radius: 25px;
+        border: 3px solid #646cff;
+        padding: 0em;
+        padding-left: 1em;
+        margin: 1em auto 0;
+        width: 30em;
+        height: 10em;
+        will-change: filter;
+        transition: filter 300ms;
+    }
+    .group-card:last-of-type {
+        margin-bottom: 1em;
+    }
+    .group-card:hover {
+        border: 3px solid #0e17b3;
+        filter: drop-shadow(10px 10px 10px #464647ec);
+    }
+    .avatar {
+        object-fit: cover;
+        border: 3px solid #213547;
+        border-radius: 50%;
+        height: 100px;
+        width: 100px;
+        align-self: center;
+    }
+    .group-name {
+        display: inline-block;
+        color: #213547;
+        align-self: center;
+    }
 </style>
