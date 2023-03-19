@@ -4,6 +4,9 @@ import * as mod from './globalFunctions.js'
 
 const MIN_GROUPNAME_LEN = 3
 const MAX_GROUPNAME_LEN = 20
+const MIN_EVENTNAME_LEN = 3
+const MAX_EVENTNAME_LEN = 20
+const MAX_EVENTDESC_LEN = 50
 
 const router = express.Router()
 
@@ -278,9 +281,9 @@ router.get("/:groupID", async function(request, response){
             console.log(error)
             if (error == "ER_SP_FETCH_NO_DATA") {
                 response.status(404).json({error: "Group not found"})
-                return
+            } else {
+                response.status(500).json({error: "Internal Server Error"})
             }
-            response.status(500).json({error: "Internal Server Error"})
 
         }finally{
             if (connection) {
@@ -293,32 +296,69 @@ router.get("/:groupID", async function(request, response){
     }
 })
 
-router.post("/:groupID/event/create", async function(request, response){
-    const groupID = parseInt(request.params.groupID)
-    /*const enteredEventTitle = request.body.eventTitle
-    const enteredEventDesc = request.body.eventDesc
-    const enteredEventDate = request.body.eventDate*/
-    const enteredEventTitle = "TitleNew"
-    const enteredEventDesc = "DescNew"
-    const enteredEventDate = "2023-03-06 13:00:00"
-    //CODE TO ADD DUMMY EVENTS SWAP WITH THE COMMENTED CODE AS NEEDED
-    const connection = await pool.getConnection()
-    try{
-        
-        const query = "INSERT INTO eventsTable (groupID, eventTitle, eventDesc, eventDate) VALUES (?,?,?,?)"
-        await connection.query(query, [groupID, enteredEventTitle, enteredEventDesc, enteredEventDate])
+router.post("/:groupID/event", async function(request, response){
 
-        await mod.createUserEventConnection(groupID)
-        
-        connection.release()
-        response.status(201).end()
-    }catch(error){
-        connection.release()
-        console.log(error)
-        response.status(500).end("Internal Server Error")
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        const groupID = parseInt(request.params.groupID)
+        const eventTitle = request.body.title
+        const eventDesc = request.body.description
+        const eventDate = request.body.date
+        const currentDate = new Date()
+
+        if (eventTitle.length < MIN_EVENTNAME_LEN || eventTitle.length > MAX_EVENTNAME_LEN) {
+            response.status(400).json({error: `Title must be between ${MIN_EVENTNAME_LEN} and ${MAX_EVENTNAME_LEN} characters`})
+            return
+        } else if (eventDesc > MAX_EVENTDESC_LEN) {
+            response.status(400).json({error: `Description may not exceed ${MAX_EVENTDESC_LEN} characters`})
+            
+        } else if (Date.parse(eventDate) <= Date.parse(currentDate.toString().slice(0,21))) {
+            response.status(400).json({error: "Event date must be in the future"})
+            return
+        }
+
+        const connection = await pool.getConnection()
+
+        try{
+            let query = "SELECT groupName FROM groupsTable WHERE groupID = ? AND ownerID = ?"
+            const result = await connection.query(query, [groupID, authResult.payload.sub])
+
+            if (result.length == 0) {
+                throw "ER_SP_FETCH_NO_DATA"
+            }
+            
+            query = "INSERT INTO eventsTable (groupID, eventTitle, eventDesc, eventDate) VALUES (?,?,?,?)"
+            await connection.query(query, [groupID, eventTitle, eventDesc, eventDate])
+
+            await mod.createUserEventConnection(groupID)
+            
+            response.status(201).end()
+
+        }catch(error){
+            console.log(error)
+            if (error == "ER_SP_FETCH_NO_DATA") {
+                response.status(404).json({error: "Group not found"})
+            } else {
+                response.status(500).end("Internal Server Error")
+            }
+            
+
+        }finally{
+            if (connection) {
+                connection.release()
+            }
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
     }
+
+    
 })
 
+// not yet used
 router.put("/:groupID/update", async function(request, response){
     const groupID = parseInt(request.params.groupID)
     const updatedGroupName = request.body.groupName
@@ -333,15 +373,33 @@ router.put("/:groupID/update", async function(request, response){
     }
 })
 
-router.get("/:groupID/event/all", async function(request, response){
-    try{
+router.get("/:groupID/events", async function(request, response){
+
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
         const groupID = parseInt(request.params.groupID)
-        const eventsFromGroupID = await mod.getEventsFromGroupID(groupID)
-        response.status(200).json(eventsFromGroupID)
-    }catch(error){
-        console.log(error)
-        response.status(500).end("Internal Server Error")
+        const connection = await pool.getConnection()
+
+        try{
+            const query = "SELECT * FROM eventsTable WHERE groupID = ? ORDER BY eventDate ASC"
+            const eventsArray = await connection.query(query, [groupID])
+            response.status(200).json({eventsArray})
+
+        }catch(error){
+            console.log(error)
+            response.status(500).json({error: "Internal Server Error"})
+        }finally{
+            if (connection) {
+                connection.release()
+            }
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
     }
+
 })
 
 router.get("/:groupID/members", async function(request, response){

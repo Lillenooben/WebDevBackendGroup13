@@ -95,12 +95,12 @@
 
     {#await response.json() then response}
 
-            {#if response.groups.length < 1}
+            {#if response.groupsArray.length < 1}
                 <p>You are currently not in any groups</p>
 
             {:else}
                 <section class="card-wrapper">
-                    {#each response.groups as group}
+                    {#each response.groupsArray as group}
 
                         <button class="group-card" on:click={() => navigate(`/group/${group.groupID}`)}>
                             
@@ -111,6 +111,10 @@
                             {/if}
 
                             <h2 class="group-name">{group.groupName}</h2>
+
+                            {#if group.isOwner}
+                                <img class="owner-symbol" src="/ownerSymbol.png" alt="owner">
+                            {/if}
 
                         </button>
 
@@ -158,6 +162,7 @@
     }
     .group-card {
         display: flex;
+        position: relative;
         column-gap: 4em;
         border-radius: 25px;
         border: 3px solid #646cff;
@@ -188,5 +193,11 @@
         display: inline-block;
         color: #213547;
         align-self: center;
+    }
+    .owner-symbol {
+        position: absolute;
+        right: 0;
+        width: 50px;
+        height: 50px;
     }
 </style>

@@ -1,5 +1,6 @@
 <script>
     import { navigate } from "svelte-routing";
+    import { each } from "svelte/internal";
     import { user } from "../user-store.js"
     import Loader from "./Loader.svelte"
 
@@ -11,6 +12,13 @@
     let deleteError = ""
 
     const fetchGroupPromise = fetch("http://localhost:8080/group/" + groupID, {
+        method: "GET",
+        headers: {
+            "Authorization": "Bearer "+$user.accessToken,
+        },
+    })
+
+    const fetchEventsPromise = fetch("http://localhost:8080/group/" + groupID +"/events", {
         method: "GET",
         headers: {
             "Authorization": "Bearer "+$user.accessToken,
@@ -87,9 +95,7 @@
 
 <!--TODO: Make sure you can't access a group you aren't part of-->
 {#await fetchGroupPromise}
-
     <Loader/>
-
 {:then response}
 
     {#await response.json() then response}
@@ -106,10 +112,34 @@
             <div>
                 <h2 class="header-inline">Upcoming Events</h2>
                 {#if response.isOwner}
-                    <button>Create event</button>
+                    <button on:click={() => navigate(`/create-event/${response.group.groupID}`)}>Create event</button>
                 {/if}
             </div>
 
+            {#await fetchEventsPromise}
+                <Loader/>
+            {:then response}
+
+                {#await response.json() then response}
+                    {#if response.eventsArray.length < 1}
+                        <p>No scheduled events</p>
+                    {:else}
+                        <section class="card-wrapper">
+                            {#each response.eventsArray as event}
+                                <div class="group-card">
+                                    <h2 class="card-header">{event.eventTitle}</h2>
+                                    <h3 class="card-header">{event.eventDate.split('T')[0]} {event.eventDate.split('T')[1].slice(0, 5)}</h3>
+                                    {#if (event.eventDesc != "")}
+                                        <p>{event.eventDesc}</p>
+                                    {:else}
+                                        <i>No description</i>
+                                    {/if}
+                                </div>
+                            {/each}
+                        </section>
+                    {/if}
+                {/await}
+            {/await}
         </section>
 
         {#if response.isOwner}
@@ -172,5 +202,26 @@
     }
     .header-inline {
         display: inline-block;
+    }
+    .group-card {
+        position: relative;
+        column-gap: 4em;
+        border-radius: 25px;
+        border: 3px solid #646cff;
+        background-color: white;
+        padding: 0em;
+        padding: 0em 1em 0em 1em;
+        margin: 1em auto 0;
+        width: 30em;
+        height: 10em;
+        word-wrap: break-word;
+        will-change: filter;
+        transition: filter 300ms;
+    }
+    .group-card:last-of-type {
+        margin-bottom: 1em;
+    }
+    .card-header {
+        margin: 0.2em 0 0 0;
     }
 </style>

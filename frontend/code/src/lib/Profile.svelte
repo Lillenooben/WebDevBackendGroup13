@@ -9,6 +9,7 @@
             "Authorization": "Bearer "+$user.accessToken,
         },
     })
+    
     let loading = false
     let showImageForm = false
     let imageHadError = false
