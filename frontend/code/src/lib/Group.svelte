@@ -102,8 +102,17 @@
 
         <h1 id="title">{response.group.groupName}</h1>
 
+        <section>
+            <div>
+                <h2 class="header-inline">Upcoming Events</h2>
+                {#if response.isOwner}
+                    <button>Create event</button>
+                {/if}
+            </div>
+
+        </section>
+
         {#if response.isOwner}
-            <button>Edit group (owner)</button>
 
             <form on:submit|preventDefault={createInvite}> <!--TODO: make it look nicer-->
                 <h2>Add member</h2>
@@ -128,8 +137,6 @@
         {/if}
         <p class="error-text">{deleteError}</p>
 
-        <p>TODO: Rest of the page</p>
-
     {/await}
 
 {:catch error}
@@ -149,7 +156,9 @@
         margin-top: 1em;
     }
     #title {
-        margin-top: 0.2em;
+        display: inline-block;
+        vertical-align: top;
+        margin: 0.75em 0 0 0.2em
     }
     .error-text {
         color: red
@@ -158,7 +167,10 @@
         margin-top: 0.5em;
     }
     form {
-        background-color: rgb(153, 152, 152);
+        background-color: #92A1B3;
         margin-bottom: 1em;
+    }
+    .header-inline {
+        display: inline-block;
     }
 </style>

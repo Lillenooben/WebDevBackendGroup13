@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS usersTable (
     username VARCHAR(14) unique,
     userPassword CHAR(72),
     profileImage MEDIUMTEXT,
-    isActive BOOLEAN,
+    isActive BOOLEAN
 );
 
 CREATE TABLE IF NOT EXISTS groupsTable (
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS groupsTable (
     ownerID INT,
     groupName VARCHAR(20),
     groupImage MEDIUMTEXT,
-    FOREIGN KEY (ownerID) REFERENCES usersTable(userID) ON DELETE CASCADE,
+    FOREIGN KEY (ownerID) REFERENCES usersTable(userID) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS userGroupConTable (
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS userGroupConTable (
     isOwner BOOLEAN,
     notifEnabled BOOLEAN,
     FOREIGN KEY (userID) REFERENCES usersTable(userID) ON DELETE CASCADE,
-    FOREIGN KEY (groupID) REFERENCES groupsTable(groupID) ON DELETE CASCADE,
+    FOREIGN KEY (groupID) REFERENCES groupsTable(groupID) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS invitationsTable (
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS invitationsTable (
     groupID INT,
     UNIQUE (userID, groupID),
     FOREIGN KEY (userID) REFERENCES usersTable(userID) ON DELETE CASCADE,
-    FOREIGN KEY (groupID) REFERENCES groupsTable(groupID) ON DELETE CASCADE,
+    FOREIGN KEY (groupID) REFERENCES groupsTable(groupID) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS eventsTable (
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS eventsTable (
     eventTitle TEXT(20),
     eventDesc TEXT(50),
     eventDate DATETIME,
-    FOREIGN KEY (groupID) REFERENCES groupsTable(groupID) ON DELETE CASCADE,
+    FOREIGN KEY (groupID) REFERENCES groupsTable(groupID) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS userEventConTable (
@@ -46,5 +46,5 @@ CREATE TABLE IF NOT EXISTS userEventConTable (
     eventID INT,
     isOptIn BOOLEAN,
     FOREIGN KEY (userID) REFERENCES usersTable(userID) ON DELETE CASCADE,
-    FOREIGN KEY (eventID) REFERENCES eventsTable(eventID) ON DELETE CASCADE,
+    FOREIGN KEY (eventID) REFERENCES eventsTable(eventID) ON DELETE CASCADE
 );
