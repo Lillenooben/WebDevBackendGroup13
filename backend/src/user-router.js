@@ -82,13 +82,22 @@ router.get("/groups", async function(request, response){
         const connection = await pool.getConnection()
         try{
             
-            const query = `SELECT userGroupConTable.groupID, groupsTable.groupName, groupsTable.groupImage 
+            const query = `SELECT userGroupConTable.groupID, groupsTable.groupName, groupsTable.groupImage, groupsTable.ownerID
                            FROM userGroupConTable 
                            INNER JOIN groupsTable 
                            ON userGroupConTable.groupID=groupsTable.groupID 
                            WHERE userID = ?`
-            const groups = await connection.query(query, [authResult.payload.sub])
-            response.status(200).json({groups})
+            const groupsArray = await connection.query(query, [authResult.payload.sub])
+
+            groupsArray.forEach(group => {
+                if (group.ownerID == authResult.payload.sub) {
+                    group.isOwner = true
+                } else {
+                    group.isOwner = false
+                }
+            });
+
+            response.status(200).json({groupsArray})
     
         }catch(error){
             console.log(error)
@@ -248,16 +257,39 @@ router.get("/:userID/invitations", async function(request, response){
     }
 })
 
-router.get("/:userID/events", async function(request, response){
-    try{
-        const userID = parseInt(request.params.userID)
-        const groupIDs = await mod.getGroupIDsFromUserID(userID)
-        const eventsFromGroupIDs = await mod.getEventsFromMultipleGroups(groupIDs)
-        response.status(200).json(eventsFromGroupIDs)
-    }catch(error){
-        console.log(error)
-        response.status(500).end("Internal Server Error")
+router.get("/events", async function(request, response){
+
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        const connection = await pool.getConnection()
+
+        try{
+            const query = `SELECT eventsTable.groupID, eventsTable.eventTitle, eventsTable.eventDesc, eventsTable.eventDate, groupsTable.groupName
+                           FROM eventsTable
+                           INNER JOIN groupsTable ON eventsTable.groupID = groupsTable.groupID
+                           INNER JOIN userGroupConTable ON groupsTable.groupID = userGroupConTable.groupID
+                           WHERE userGroupConTable.userID = ?
+                           ORDER BY eventsTable.eventDate ASC`
+            const eventsArray = await connection.query(query, [authResult.payload.sub])
+
+            response.status(200).json({eventsArray})
+
+        }catch(error){
+            console.log(error)
+            response.status(500).json({error: "Internal Server Error"})
+
+        }finally{
+            if (connection) {
+                connection.release()
+            }
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
     }
+    
 })
 
 export {router}
