@@ -38,10 +38,6 @@ app.use(function(req, res, next) {
 
 })
 
-app.get("/", function(request, response){
-    response.send("It works")
-})
-
 app.post("/login", async function(request, response){
     const grantType = request.body.grant_type
     const username = request.body.username

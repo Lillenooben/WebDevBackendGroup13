@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS eventsTable (
     eventID INT PRIMARY KEY AUTO_INCREMENT,
     groupID INT,
     eventTitle TEXT(20),
-    eventDesc TEXT(50),
+    eventDesc TEXT(150),
     eventDate DATETIME,
     FOREIGN KEY (groupID) REFERENCES groupsTable(groupID) ON DELETE CASCADE
 );
@@ -47,4 +47,12 @@ CREATE TABLE IF NOT EXISTS userEventConTable (
     isOptIn BOOLEAN,
     FOREIGN KEY (userID) REFERENCES usersTable(userID) ON DELETE CASCADE,
     FOREIGN KEY (eventID) REFERENCES eventsTable(eventID) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS messagesTable (
+    messageID INT PRIMARY KEY AUTO_INCREMENT,
+    userID INT,
+    groupID INT,
+    message VARCHAR(255),
+    FOREIGN KEY (userID) REFERENCES usersTable(userID) ON DELETE CASCADE
 );

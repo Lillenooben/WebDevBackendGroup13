@@ -1,8 +1,8 @@
 <script>
     import { navigate } from "svelte-routing";
-    import { each } from "svelte/internal";
     import { user } from "../user-store.js"
     import Loader from "./Loader.svelte"
+    import { onMount } from "svelte"
 
     const groupID = window.location.pathname.split("/").pop()
     let username = ""
@@ -11,6 +11,12 @@
     let inviteResponseMessage = ""
     let deleteError = ""
 
+    let chatMsg = ""
+    let chatError = ""
+    let pollError = ""
+
+    let messages = []
+
     const fetchGroupPromise = fetch("http://localhost:8080/group/" + groupID, {
         method: "GET",
         headers: {
@@ -18,12 +24,44 @@
         },
     })
 
-    const fetchEventsPromise = fetch("http://localhost:8080/group/" + groupID +"/events", {
+    const fetchEventsPromise = fetch("http://localhost:8080/group/" + groupID + "/events", {
         method: "GET",
         headers: {
             "Authorization": "Bearer "+$user.accessToken,
         },
     })
+
+    let fetchMessagesPromise = fetch("http://localhost:8080/group/" + groupID + "/chat", {
+        method: "GET",
+        headers: {
+            "Authorization": "Bearer "+$user.accessToken,
+        },
+    })
+
+    async function pollMessages(){
+        pollError = ""
+
+        const response = await fetch("http://localhost:8080/group/" + groupID + "/chat", {
+            method: "GET",
+            headers: {
+                "Authorization": "Bearer "+$user.accessToken,
+            },
+        })
+
+        const body = await response.json()
+
+        if (response.status == 200) {
+            messages = body.messages
+        } else {
+            pollError = body.error
+        }
+
+        setTimeout(pollMessages, 1000)
+    }
+
+    onMount(async () => {
+		pollMessages()
+	});
 
     async function createInvite(){
         inviteResponseMessage = ""
@@ -56,6 +94,10 @@
     async function leaveGroup(){
         deleteError = ""
 
+        if (!confirm("Are you sure you wish to leave the group?")) {
+            return
+        }
+
         const response = await fetch("http://localhost:8080/group/" + groupID + "/leave", {
             method: "DELETE",
             headers: {
@@ -72,6 +114,8 @@
     }
 
     async function deleteGroup() {
+        deleteError = ""
+
         if (!confirm("Are you sure you wish to delete the group? \nThis cannot be undone!")) {
             return
         }
@@ -88,6 +132,30 @@
 
         } else {
             deleteError = "Something went wrong, reload and try again."
+        }
+    }
+
+    async function sendMessage() {
+        chatError = ""
+
+        const data = {
+            message: chatMsg,
+        }
+        
+        const response = await fetch("http://localhost:8080/group/" + groupID + "/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer "+$user.accessToken,
+            },
+            body: JSON.stringify(data)
+        })
+
+        if (response.status == 201) {
+            chatMsg = ""
+        } else {
+            const body = await response.json()
+            chatError = body.error
         }
     }
 
@@ -108,25 +176,26 @@
 
         <h1 id="title">{response.group.groupName}</h1>
 
-        <section>
-            <div>
-                <h2 class="header-inline">Upcoming Events</h2>
-                {#if response.isOwner}
-                    <button on:click={() => navigate(`/create-event/${response.group.groupID}`)}>Create event</button>
-                {/if}
-            </div>
+        <div class="content-wrapper">
 
-            {#await fetchEventsPromise}
-                <Loader/>
-            {:then response}
+            <div class="half-width">
+                <div>
+                    <h2 class="section-header">Upcoming Events</h2>
+                    {#if response.isOwner}
+                        <button on:click={() => navigate(`/create-event/${response.group.groupID}`)}>Create event</button>
+                    {/if}
+                </div>
 
-                {#await response.json() then response}
-                    {#if response.eventsArray.length < 1}
-                        <p>No scheduled events</p>
-                    {:else}
-                        <section class="card-wrapper">
+                {#await fetchEventsPromise}
+                    <Loader/>
+                {:then response}
+
+                    {#await response.json() then response}
+                        {#if response.eventsArray.length < 1}
+                            <p>No scheduled events</p>
+                        {:else}
                             {#each response.eventsArray as event}
-                                <div class="group-card">
+                                <div class="event-card">
                                     <h2 class="card-header">{event.eventTitle}</h2>
                                     <h3 class="card-header">{event.eventDate.split('T')[0]} {event.eventDate.split('T')[1].slice(0, 5)}</h3>
                                     {#if (event.eventDesc != "")}
@@ -136,15 +205,36 @@
                                     {/if}
                                 </div>
                             {/each}
-                        </section>
-                    {/if}
+                        {/if}
+                    {/await}
                 {/await}
-            {/await}
-        </section>
+            </div>
+
+            <div class="half-width">
+
+                <div id="chat-container">
+                    <h2 class="section-header">Messageboard</h2>
+                    <div id="chat-window">
+                        {#each messages as message}
+                            <div class="chat-message">
+                                <p class="chat-text"><strong class="sender-name">{message.username}</strong>: {message.message}</p>
+                            </div>
+                        {/each}
+                    </div>
+                    
+                    <form on:submit|preventDefault={sendMessage}>
+                            <input type="text" bind:value={chatMsg} required/>
+                            <button type="submit" class="submit-button">Send</button>
+                            <p class="error-chat">{chatError}</p>
+                    </form>
+                </div>
+
+            </div>
+        </div>
 
         {#if response.isOwner}
 
-            <form on:submit|preventDefault={createInvite}> <!--TODO: make it look nicer-->
+            <form class="invite-form" on:submit|preventDefault={createInvite}> <!--TODO: make it look nicer-->
                 <h2>Add member</h2>
 
                     {#if loading}
@@ -161,9 +251,9 @@
                 <button type="submit" class="submit-button">Send invite</button>
             </form>
 
-            <button on:click={deleteGroup}>Delete Group</button>
+            <button class="red-button" on:click={deleteGroup}>Delete Group</button>
         {:else}
-            <button on:click={leaveGroup}>Leave Group</button> 
+            <button class="red-button" on:click={leaveGroup}>Leave Group</button> 
         {/if}
         <p class="error-text">{deleteError}</p>
 
@@ -196,15 +286,13 @@
     .submit-button {
         margin-top: 0.5em;
     }
-    form {
+    .invite-form {
         background-color: #92A1B3;
         margin-bottom: 1em;
     }
-    .header-inline {
-        display: inline-block;
-    }
-    .group-card {
+    .event-card {
         position: relative;
+        flex-grow: 0;
         column-gap: 4em;
         border-radius: 25px;
         border: 3px solid #646cff;
@@ -218,10 +306,62 @@
         will-change: filter;
         transition: filter 300ms;
     }
-    .group-card:last-of-type {
+    .event-card:last-of-type {
         margin-bottom: 1em;
     }
     .card-header {
         margin: 0.2em 0 0 0;
+    }
+    .red-button {
+        background-color: red;    
+    }
+    .content-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    .half-width {
+        width: 50%;
+    }
+    .section-header {
+        display: inline-block;
+    }
+    #chat-container {
+        margin: 1em;
+        background-color: #92A1B3;
+        border-radius: 25px;
+        border: 2px solid black;
+        height: 29em;
+    }
+    #chat-window {
+        background-color: white;
+        width: 80%;
+        height: 65%;
+        margin: auto;
+        border: 2px solid black;
+        overflow: auto;
+        display: flex;
+        flex-direction: column-reverse;
+        word-wrap: break-word;
+    }
+    .chat-message {
+        margin: 0.4em 1em;
+        padding: 0 0.5em;
+        background-color: rgb(168, 168, 168);
+        border: 1px solid black;
+        border-radius: 10px;
+        text-align: left;
+    }
+    .chat-text {
+        color: black;
+    }
+    input[type=text] {
+        width: 20em;
+        padding: 8px 14px;
+        margin: 8px 0;
+        box-sizing: border-box;
+    }
+    .error-chat {
+        color: red;
+        margin-top: 0;
     }
 </style>

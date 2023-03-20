@@ -6,7 +6,8 @@ const MIN_GROUPNAME_LEN = 3
 const MAX_GROUPNAME_LEN = 20
 const MIN_EVENTNAME_LEN = 3
 const MAX_EVENTNAME_LEN = 20
-const MAX_EVENTDESC_LEN = 50
+const MAX_EVENTDESC_LEN = 150
+const MAX_MESSAGE_LEN = 150
 
 const router = express.Router()
 
@@ -311,8 +312,9 @@ router.post("/:groupID/event", async function(request, response){
         if (eventTitle.length < MIN_EVENTNAME_LEN || eventTitle.length > MAX_EVENTNAME_LEN) {
             response.status(400).json({error: `Title must be between ${MIN_EVENTNAME_LEN} and ${MAX_EVENTNAME_LEN} characters`})
             return
-        } else if (eventDesc > MAX_EVENTDESC_LEN) {
+        } else if (eventDesc.length > MAX_EVENTDESC_LEN) {
             response.status(400).json({error: `Description may not exceed ${MAX_EVENTDESC_LEN} characters`})
+            return
             
         } else if (Date.parse(eventDate) <= Date.parse(currentDate.toString().slice(0,21))) {
             response.status(400).json({error: "Event date must be in the future"})
@@ -411,6 +413,75 @@ router.get("/:groupID/members", async function(request, response){
         console.log(error)
         response.status(500).end("Internal Server Error")
     }
+})
+
+router.get("/:groupID/chat", async function(request, response){
+
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        const connection = await pool.getConnection()
+        
+        try{
+            const query = `SELECT messagesTable.message, usersTable.username
+                           FROM messagesTable
+                           INNER JOIN usersTable ON messagesTable.userID = usersTable.userID
+                           WHERE groupID = ?
+                           ORDER BY messagesTable.messageID DESC
+                           LIMIT 100`
+            const messages = await connection.query(query, [request.params.groupID])
+            response.status(200).json({messages})
+
+        }catch(error){
+            console.log(error)
+            response.status(500).json({error: "Internal Server Error"})
+
+        }finally{
+            if (connection) {
+                connection.release()
+            }
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
+    }
+})
+
+router.post("/:groupID/chat", async function(request, response){
+
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        const chatMessage = request.body.message
+
+        if (chatMessage.length > MAX_MESSAGE_LEN) {
+            response.status(400).json({error: `Message may not exceed ${MAX_MESSAGE_LEN} characters`})
+            return
+        }
+
+        const connection = await pool.getConnection()
+        
+        try{
+            const query = "INSERT INTO messagesTable (userID, groupID, message) VALUES (?,?,?)"
+            await connection.query(query, [authResult.payload.sub, request.params.groupID, chatMessage])
+            response.status(201).end()
+
+        }catch(error){
+            console.log(error)
+            response.status(500).json({error: "Internal Server Error"})
+
+        }finally{
+            if (connection) {
+                connection.release()
+            }
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
+    }
+
 })
 
 export {router}
