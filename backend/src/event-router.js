@@ -23,7 +23,6 @@ router.get("/:eventID", async function(request, response){
     try{
         const eventFromEventID = await mod.getEventFromEventID(eventID)
         const event = eventFromEventID[0]
-        console.log(event)
         response.status(200).json(event)
     }catch(error){
         console.log(error)

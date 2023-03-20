@@ -89,7 +89,6 @@ export async function addUser(username, password){
 }
 
 export async function getUserByUserID(userID){
-    console.log("userID: ", userID)
     const connection = await pool.getConnection()
     const query = "SELECT * FROM usersTable WHERE userID = ?"
     const result = await connection.query(query, [userID])
@@ -134,7 +133,6 @@ export async function updateGroupData(groupData){
 
 export async function updateUserData(userData){
     bcrypt.hash(userData[1], salt, async function(err, hash){
-        console.log("hashPassword: " + hash)
         userData[1] = hash
         try{
             const connection = await pool.getConnection()

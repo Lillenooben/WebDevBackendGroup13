@@ -96,9 +96,7 @@ router.get("/groups", async function(request, response){
                     group.isOwner = false
                 }
             });
-
-
-            console.log({groupsArray})
+            
             response.status(200).json({groupsArray})
     
         }catch(error){
@@ -275,8 +273,6 @@ router.get("/events", async function(request, response){
                            WHERE userGroupConTable.userID = ?
                            ORDER BY eventsTable.eventDate ASC`
             const eventsArray = await connection.query(query, [authResult.payload.sub])
-
-            console.log({eventsArray})
 
             response.status(200).json({eventsArray})
 
