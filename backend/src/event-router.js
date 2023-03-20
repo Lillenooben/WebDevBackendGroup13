@@ -22,7 +22,9 @@ router.get("/:eventID", async function(request, response){
     const eventID = parseInt(request.params.eventID)
     try{
         const eventFromEventID = await mod.getEventFromEventID(eventID)
-        response.status(200).json(eventFromEventID)
+        const event = eventFromEventID[0]
+        console.log(event)
+        response.status(200).json(event)
     }catch(error){
         console.log(error)
         response.status(500).end("Internal Server Error")

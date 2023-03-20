@@ -97,6 +97,8 @@ router.get("/groups", async function(request, response){
                 }
             });
 
+
+            console.log({groupsArray})
             response.status(200).json({groupsArray})
     
         }catch(error){
@@ -266,13 +268,15 @@ router.get("/events", async function(request, response){
         const connection = await pool.getConnection()
 
         try{
-            const query = `SELECT eventsTable.groupID, eventsTable.eventTitle, eventsTable.eventDesc, eventsTable.eventDate, groupsTable.groupName
+            const query = `SELECT eventsTable.eventID, eventsTable.groupID, eventsTable.eventTitle, eventsTable.eventDesc, eventsTable.eventDate, groupsTable.groupName
                            FROM eventsTable
                            INNER JOIN groupsTable ON eventsTable.groupID = groupsTable.groupID
                            INNER JOIN userGroupConTable ON groupsTable.groupID = userGroupConTable.groupID
                            WHERE userGroupConTable.userID = ?
                            ORDER BY eventsTable.eventDate ASC`
             const eventsArray = await connection.query(query, [authResult.payload.sub])
+
+            console.log({eventsArray})
 
             response.status(200).json({eventsArray})
 

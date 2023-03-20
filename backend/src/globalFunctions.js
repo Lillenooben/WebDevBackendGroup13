@@ -89,6 +89,7 @@ export async function addUser(username, password){
 }
 
 export async function getUserByUserID(userID){
+    console.log("userID: ", userID)
     const connection = await pool.getConnection()
     const query = "SELECT * FROM usersTable WHERE userID = ?"
     const result = await connection.query(query, [userID])
@@ -272,7 +273,7 @@ export async function getGroupIDsFromUserID(userID){
 
 export async function getEventsFromMultipleGroups(groupIDs){
     const connection = await pool.getConnection()
-    const query = "SELECT * FROM eventsTable WHERE groupID in (?)"
+    const query = "SELECT * FROM eventsTable WHERE groupID in (?) ORDER BY eventDate ASC"
     const events = await connection.query(query, [groupIDs])
     connection.release()
     return events
