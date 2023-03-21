@@ -408,7 +408,10 @@ router.get("/:groupID/members", async function(request, response){
     try{
         const groupID = parseInt(request.params.groupID)
         const allMembersIDListFromGroupID = await mod.getUsersFromGroupID(groupID)
-        response.status(200).json(allMembersIDListFromGroupID)
+
+        const membersArray = allMembersIDListFromGroupID
+
+        response.status(200).json({membersArray})
     }catch(error){
         console.log(error)
         response.status(500).end("Internal Server Error")
