@@ -2,7 +2,7 @@
     import { navigate } from "svelte-routing";
     import { user } from "../user-store.js"
     import Loader from "./Loader.svelte"
-    import { onMount } from "svelte"
+    import { onDestroy, onMount } from "svelte"
 
     const groupID = window.location.pathname.split("/").pop()
     let username = ""
@@ -14,6 +14,7 @@
     let chatMsg = ""
     let chatError = ""
     let pollError = ""
+    let timeout
 
     let messages = []
 
@@ -56,12 +57,16 @@
             pollError = body.error
         }
 
-        setTimeout(pollMessages, 1000)
+        timeout = setTimeout(pollMessages, 1000)
     }
 
     onMount(async () => {
 		pollMessages()
-	});
+	})
+
+    onDestroy(async () => {
+        clearTimeout(timeout)
+    })
 
     async function createInvite(){
         inviteResponseMessage = ""
