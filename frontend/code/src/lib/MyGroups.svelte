@@ -111,6 +111,7 @@
                             {/if}
 
                             <h2 class="group-name">{group.groupName}</h2>
+                            <h2>members:{group.memberCount} events:{group.eventCount}</h2>
 
                             {#if group.isOwner}
                                 <img class="owner-symbol" src="/ownerSymbol.png" alt="owner">

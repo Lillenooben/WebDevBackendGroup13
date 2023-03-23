@@ -41,8 +41,8 @@ router.post("/create", async function(request, response){
 
         const connection = await pool.getConnection()
         try{
-            let query = "INSERT INTO groupsTable (ownerID, groupName, groupImage) VALUES (?, ?, ?)"
-            await connection.query(query, [authResult.payload.sub, enteredGroupName, enteredImage])
+            let query = "INSERT INTO groupsTable (ownerID, groupName, groupImage, memberCount, eventCount) VALUES (?, ?, ?, ?, ?)"
+            await connection.query(query, [authResult.payload.sub, enteredGroupName, enteredImage, 0, 0])
     
             query = "SELECT groupID FROM groupsTable ORDER BY groupID DESC LIMIT 1"
     

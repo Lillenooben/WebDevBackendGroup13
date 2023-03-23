@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS groupsTable (
     ownerID INT,
     groupName VARCHAR(20),
     groupImage MEDIUMTEXT,
+    memberCount INT,
+    eventCount INT,
     FOREIGN KEY (ownerID) REFERENCES usersTable(userID) ON DELETE CASCADE
 );
 
@@ -56,3 +58,23 @@ CREATE TABLE IF NOT EXISTS messagesTable (
     message VARCHAR(255),
     FOREIGN KEY (userID) REFERENCES usersTable(userID) ON DELETE CASCADE
 );
+
+CREATE TRIGGER increment_members
+AFTER INSERT ON userGroupConTable
+FOR EACH ROW
+UPDATE groupsTable SET groupsTable.memberCount = groupsTable.memberCount+1 WHERE groupsTable.groupID = NEW.groupID;
+
+CREATE TRIGGER decrement_members
+AFTER DELETE ON userGroupConTable
+FOR EACH ROW
+UPDATE groupsTable SET groupsTable.memberCount = groupsTable.memberCount-1 WHERE groupsTable.groupID = OLD.groupID;
+
+CREATE TRIGGER increment_events
+AFTER INSERT ON eventsTable
+FOR EACH ROW
+UPDATE groupsTable SET groupsTable.eventCount = groupsTable.eventCount+1 WHERE groupsTable.groupID = NEW.groupID;
+
+CREATE TRIGGER decrement_events
+AFTER DELETE ON eventsTable
+FOR EACH ROW
+UPDATE groupsTable SET groupsTable.eventCount = groupsTable.eventCount-1 WHERE groupsTable.groupID = OLD.groupID;
