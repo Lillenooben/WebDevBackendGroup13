@@ -360,18 +360,37 @@ router.post("/:groupID/event", async function(request, response){
     
 })
 
-// not yet used
 router.put("/:groupID/update", async function(request, response){
-    const groupID = parseInt(request.params.groupID)
-    const updatedGroupName = request.body.groupName
-    const updatedGroupImage = null //request.body.groupImage??
-    const arrayOfGroupData = [updatedGroupName, updatedGroupImage, groupID]
-    try{
-        await mod.updateGroupData(arrayOfGroupData)
-        response.status(200).redirect("/")
-    }catch(error){
-        console.log(error)
-        response.status(500).end("Internal Server Error")
+
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        const groupID = parseInt(request.params.groupID)
+        const updatedGroupName = request.body.groupName
+        const updatedGroupImage = request.body.imageData
+        
+        const connection = await pool.getConnection()
+
+        try{
+            const query = `UPDATE groupsTable
+                           SET groupName = ?, groupImage = ?
+                           WHERE groupID = ? AND ownerID = ?`
+            await connection.query(query, [updatedGroupName, updatedGroupImage, groupID, authResult.payload.sub])
+            response.status(200).end()
+
+        }catch(error){
+            console.log(error)
+            response.status(500).end({error: "Internal Server Error"})
+
+        }finally{
+            if (connection) {
+                connection.release()
+            }
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
     }
 })
 

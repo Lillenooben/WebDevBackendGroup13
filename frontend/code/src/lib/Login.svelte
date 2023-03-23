@@ -50,7 +50,12 @@
     }
 </script>
 
-<h1>Login</h1>
+<img class="logo" src="/NotifyUs_Logo.png" alt="logo">
+
+<h1 class="inline-header">Notify . Us</h1>
+<p>Get organized with your friends and colleagues</p>
+
+<h1 class="top-margin">Login</h1>
 
 {#if loading}
     <Loader/>
@@ -76,6 +81,24 @@
 <p>Don't have an account? <Link to="signup">Sign up!</Link></p>
 
 <style>
+    .top-margin {
+        margin-top: 1.5em;
+    }
+    .logo {
+        height: 100px;
+        width: 100px;
+    }
+    .inline-header {
+        display: inline-block;
+        vertical-align: top;
+        margin: 0.5em 0 0 0.2em
+    }
+    input {
+        width: 19.1em;
+        padding: 8px 14px;
+        margin: 8px 0;
+        box-sizing: border-box;
+    }
     .error-text {
         color: red
     }

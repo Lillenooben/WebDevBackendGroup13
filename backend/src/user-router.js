@@ -5,7 +5,7 @@ import * as mod from './globalFunctions.js'
 const MIN_USERNAME_LEN = 3
 const MAX_USERNAME_LEN = 14
 const MIN_PASSWORD_LEN = 8
-const MAX_PASSWORD_LEN = 14
+const MAX_PASSWORD_LEN = 18
 
 const router = express.Router()
 

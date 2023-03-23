@@ -93,6 +93,12 @@
     p:last-of-type {
         margin-bottom: 1em;
     }
+    input {
+        width: 19.1em;
+        padding: 8px 14px;
+        margin: 8px 0;
+        box-sizing: border-box;
+    }
     .submit-button {
         margin-top: 0.5em;
     }

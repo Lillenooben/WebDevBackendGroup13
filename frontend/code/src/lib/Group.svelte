@@ -180,6 +180,9 @@
         {/if}
 
         <h1 id="title">{response.group.groupName}</h1>
+        {#if response.isOwner}
+            <button class="edit-button" on:click={() => navigate(`/group/update/${response.group.groupID}`)}>Edit group</button>
+        {/if}
 
         <div class="content-wrapper">
 
@@ -284,6 +287,11 @@
         display: inline-block;
         vertical-align: top;
         margin: 0.75em 0 0 0.2em
+    }
+    .edit-button {
+        display: inline-block;
+        vertical-align: top;
+        margin: 3.5em 0 0 1em
     }
     .error-text {
         color: red
