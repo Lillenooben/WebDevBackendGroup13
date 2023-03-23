@@ -111,7 +111,12 @@
                             {/if}
 
                             <h2 class="group-name">{group.groupName}</h2>
-                            <h2>members:{group.memberCount} events:{group.eventCount}</h2>
+                            <div id="icon-wrapper">
+                                <h2>
+                                    <img class="small-icon" src="/person_icon.png" alt="person icon">{group.memberCount} 
+                                    <img class="small-icon" src="/calendar_icon.png" alt="calendar icon">{group.eventCount}
+                                </h2>
+                            </div>
 
                             {#if group.isOwner}
                                 <img class="owner-symbol" src="/ownerSymbol.png" alt="owner">
@@ -200,5 +205,19 @@
         right: 0;
         width: 50px;
         height: 50px;
+    }
+    .small-icon {
+        width: 1em; 
+        height: 1em;
+        vertical-align: middle;
+        overflow: hidden;
+    }
+    #icon-wrapper {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+    }
+    #icon-wrapper h2 {
+        margin: 0 0.5em 0.5em 0;
     }
 </style>
