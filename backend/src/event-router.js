@@ -18,6 +18,35 @@ pool.on('error', function(error){
     console.log("Error from pool", error)
 })
 
+router.get("/:eventID", async function(request, response){
+
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        const eventID = parseInt(request.params.eventID)
+        const connection = await pool.getConnection()
+
+        try{
+            const query = "SELECT * FROM eventsTable WHERE eventID = ?"
+            const event = await connection.query(query, [eventID])
+            response.status(200).json({event: event[0]})
+
+        }catch(error){
+            console.log(error)
+            response.status(500).json({error: "Internal Server Error"})
+
+        }finally{
+            if (connection) {
+                connection.release()
+            }
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
+    }
+})
+
 router.put("/:eventID/update", async function(request, response){
 
     const authResult = mod.authorizeJWT(request)
@@ -25,9 +54,9 @@ router.put("/:eventID/update", async function(request, response){
     if (authResult.succeeded) {
 
         const eventID = parseInt(request.params.eventID)
-        const updatedEventTitle = request.body.eventTitle
-        const updatedEventDesc = request.body.eventDesc
-        const updatedEventDate = request.body.eventDate
+        const updatedEventTitle = request.body.title
+        const updatedEventDesc = request.body.description
+        const updatedEventDate = request.body.date
         const connection = await pool.getConnection()
 
         try{

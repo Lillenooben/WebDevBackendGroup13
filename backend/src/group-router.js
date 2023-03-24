@@ -446,7 +446,7 @@ router.get("/:groupID/chat", async function(request, response){
         const connection = await pool.getConnection()
         
         try{
-            const query = `SELECT messagesTable.message, usersTable.username
+            const query = `SELECT messagesTable.message, messagesTable.userID, usersTable.username
                            FROM messagesTable
                            INNER JOIN usersTable ON messagesTable.userID = usersTable.userID
                            WHERE groupID = ?

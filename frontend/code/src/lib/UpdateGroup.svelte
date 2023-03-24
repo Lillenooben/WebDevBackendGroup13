@@ -1,5 +1,5 @@
 <script>
-    import { onMount } from "svelte";
+    import { onMount } from "svelte"
     import { user } from "../user-store.js"
     import { navigate } from "svelte-routing"
 
@@ -47,10 +47,6 @@
 
     async function fetchGroupInfo(){
         error = ""
-
-        const data = {
-            groupID: groupID
-        }
 
         const response = await fetch("http://localhost:8080/group/" + groupID, {
             method: "GET",

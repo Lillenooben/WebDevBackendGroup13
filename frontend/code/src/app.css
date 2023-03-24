@@ -16,11 +16,11 @@
 
 a {
   font-weight: 500;
-  color: #3f46c4;
+  color: #030dc8;
   text-decoration: inherit;
 }
 a:hover {
-  color: #0e17b3;
+  color: #0099ff;
 }
 
 body {
@@ -69,7 +69,7 @@ button:hover {
     background-color: #E6E3D3;
   }
   a:hover {
-    color: #0e17b3;
+    color: #003558;
   }
   button {
     background-color: #f9f9f9;

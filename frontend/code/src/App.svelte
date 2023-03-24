@@ -29,6 +29,7 @@
         <Link to="/">
           <img src="/NotifyUs_Logo.png" class="logo" alt="NotifyUs Logo"/>
         </Link>
+        <Link to="/">Home</Link>
         <Link to="groups">My Groups</Link>
         <Link to="create-group">Create Group</Link>
         <Link to="profile">Profile</Link>

@@ -54,6 +54,7 @@
 
         if (response.status == 200) {
             messages = body.messages
+            console.log(messages)
         } else {
             pollError = body.error
         }
@@ -251,12 +252,20 @@
             <div class="half-width">
 
                 <div id="chat-container">
-                    <h2 class="section-header">Messageboard</h2>
+                    <h2>Chat</h2>
                     <div id="chat-window">
                         {#each messages as message}
-                            <div class="chat-message">
-                                <p class="chat-text"><strong class="sender-name">{message.username}</strong>: {message.message}</p>
-                            </div>
+                            {#if $user.userID == message.userID}
+                                <div class="chat-message user-chat">
+                                    <strong>{message.username}</strong>
+                                    <p class="chat-body">{message.message}</p>
+                                </div>
+                            {:else}
+                                <div class="chat-message other-chat">
+                                    <strong>{message.username}</strong>
+                                    <p class="chat-body">{message.message}</p>
+                                </div>
+                            {/if}
                         {/each}
                     </div>
                     
@@ -330,8 +339,12 @@
         margin-top: 0.5em;
     }
     .invite-form {
-        background-color: #92A1B3;
-        margin-bottom: 1em;
+        background-color: #b8b8b8;
+        width: 30em;
+        margin-left: auto;
+        margin-right: 9em;
+        border: 2px solid black;
+        padding-bottom: 1em;
     }
     .event-card {
         position: relative;
@@ -370,16 +383,19 @@
     }
     #chat-container {
         margin: 1em;
-        background-color: #a5a5a5;
+        background-color: #b8b8b8;
         border-radius: 25px;
         border: 2px solid black;
-        height: 29em;
+        height: 30em;
+    }
+    #chat-container h2 {
+        margin: 0;
     }
     #chat-window {
         background-color: white;
-        width: 80%;
-        height: 65%;
-        margin: auto;
+        margin: 0em auto auto auto;
+        width: 95%;
+        height: 74%;
         border: 2px solid black;
         overflow: auto;
         display: flex;
@@ -389,13 +405,23 @@
     .chat-message {
         margin: 0.4em 1em;
         padding: 0 0.5em;
-        background-color: rgb(168, 168, 168);
         border: 1px solid black;
         border-radius: 10px;
         text-align: left;
-    }
-    .chat-text {
         color: black;
+    }
+    .chat-body {
+        margin: 0 0 0.5em 0;
+    }
+    .user-chat {
+        background-color: rgb(232, 172, 61);
+        width: 25em;
+        margin-left: auto;
+    }
+    .other-chat {
+        background-color: rgb(209, 209, 209);
+        width: 25em;
+        margin-right: auto;
     }
     input[type=text] {
         width: 20em;
