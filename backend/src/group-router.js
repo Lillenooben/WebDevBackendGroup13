@@ -41,8 +41,8 @@ router.post("/create", async function(request, response){
 
         const connection = await pool.getConnection()
         try{
-            let query = "INSERT INTO groupsTable (ownerID, groupName, groupImage, memberCount, eventCount) VALUES (?, ?, ?, ?, ?)"
-            await connection.query(query, [authResult.payload.sub, enteredGroupName, enteredImage, 0, 0])
+            let query = "INSERT INTO groupsTable (ownerID, groupName, groupImage, memberCount, eventCount, messageCount) VALUES (?, ?, ?, ?, ?, ?)"
+            await connection.query(query, [authResult.payload.sub, enteredGroupName, enteredImage, 0, 0, 0])
     
             query = "SELECT groupID FROM groupsTable ORDER BY groupID DESC LIMIT 1"
     
@@ -50,7 +50,7 @@ router.post("/create", async function(request, response){
     
             const groupID = latestInsertedGroup[0].groupID
     
-            await mod.createUserGroupConnection(authResult.payload.sub, groupID, authResult.payload.username, true)
+            await mod.createUserGroupConnection(authResult.payload.sub, groupID, true)
             response.status(201).json({newGroupID: groupID})
 
         }catch(error){
@@ -149,7 +149,7 @@ router.post("/:groupID/invite/accept", async function(request, response){
     if (authResult.succeeded) {
 
         try{
-            mod.createUserGroupConnection(authResult.payload.sub, request.params.groupID, authResult.payload.username, false)
+            mod.createUserGroupConnection(authResult.payload.sub, request.params.groupID, false)
             response.status(201).end()
         
         }catch(error){
@@ -262,6 +262,7 @@ router.get("/:groupID", async function(request, response){
 
         const connection = await pool.getConnection()
         const groupID = parseInt(request.params.groupID)
+        const userID = parseInt(request.query.userID)
 
         try{
             const query = "SELECT * FROM groupsTable WHERE groupID = ?"
@@ -272,7 +273,7 @@ router.get("/:groupID", async function(request, response){
             }
 
             let isOwner = false
-            if (group[0].ownerID == authResult.payload.sub) {
+            if (group[0].ownerID == userID) {
                 isOwner = true
             }
 
@@ -444,15 +445,19 @@ router.get("/:groupID/chat", async function(request, response){
     if (authResult.succeeded) {
 
         const connection = await pool.getConnection()
+        const groupID = request.params.groupID
         
         try{
-            const query = `SELECT messagesTable.message, messagesTable.userID, usersTable.username
+            let query = `SELECT messagesTable.message, messagesTable.userID, usersTable.username
                            FROM messagesTable
                            INNER JOIN usersTable ON messagesTable.userID = usersTable.userID
                            WHERE groupID = ?
-                           ORDER BY messagesTable.messageID DESC
-                           LIMIT 100`
-            const messages = await connection.query(query, [request.params.groupID])
+                           ORDER BY messagesTable.messageID DESC`
+            const messages = await connection.query(query, [groupID])
+
+            query = "UPDATE userGroupConTable SET prevMessageCount = ? WHERE userID = ? AND groupID = ?"
+            await connection.query(query, [messages.length, request.query.userID, groupID])
+
             response.status(200).json({messages})
 
         }catch(error){

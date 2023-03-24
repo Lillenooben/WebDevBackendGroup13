@@ -118,6 +118,12 @@
                                 </h2>
                             </div>
 
+                            {#if group.messageCount-group.prevMessageCount > 0}
+                                <div class="notification-number">
+                                    <h2>{group.messageCount-group.prevMessageCount}</h2>
+                                </div>
+                            {/if}
+
                             {#if group.isOwner}
                                 <img class="owner-symbol" src="/ownerSymbol.png" alt="owner">
                             {/if}
@@ -219,5 +225,17 @@
     }
     #icon-wrapper h2 {
         margin: 0 0.5em 0.5em 0;
+    }
+    .notification-number {
+        width: 2em;
+        height: 2em;
+        margin-top: 0.5em;
+        margin-right: 0.5em;
+        border-radius: 50%;
+        background-color: red;
+        border: 2px solid rgb(37, 0, 0)
+    }
+    .notification-number h2 {
+        margin-top: 0;
     }
 </style>

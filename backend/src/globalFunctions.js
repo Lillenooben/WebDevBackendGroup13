@@ -171,11 +171,11 @@ export async function createUserEventConnection(groupID){
     }
 }
 
-export async function createUserGroupConnection(userID, groupID, username, isOwner){
+export async function createUserGroupConnection(userID, groupID, isOwner){
     const connection = await pool.getConnection()
     try{
-        const query = "INSERT INTO userGroupConTable (userID, groupID, nickname, isOwner, notifEnabled) VALUES (?,?,?,?,?)"
-        await connection.query(query, [userID, groupID, username, isOwner, true])
+        const query = "INSERT INTO userGroupConTable (userID, groupID, isOwner, notifEnabled) VALUES (?,?,?,?)"
+        await connection.query(query, [userID, groupID, isOwner, true])
     }catch(error){
         console.log(error)
     }finally{
@@ -187,23 +187,25 @@ export async function createUserGroupConnection(userID, groupID, username, isOwn
 
 export async function compareLoginCredentials(username, password){
     const connection = await pool.getConnection()
-    const query = "SELECT userPassword, userID FROM usersTable WHERE username = ?"
+    const query = "SELECT * FROM usersTable WHERE username = ?"
 
     try {
 
-        const hashedObjectFromDatabase = await connection.query(query, [username])
+        const user = await connection.query(query, [username])
 
-        const hashedPassword = hashedObjectFromDatabase[0].userPassword
+        const hashedPassword = user[0].userPassword
         
-        connection.release()
         return {
             success: bcrypt.compareSync(password, hashedPassword),
-            id: hashedObjectFromDatabase[0].userID
+            user: user[0]
         }
 
-    } catch (error) {
-        connection.release()
+    }catch(error){
         return {success: false}
+    }finally{
+        if (connection) {
+            connection.release()
+        }
     }
 
 }
@@ -224,7 +226,7 @@ export async function inivtationResponse(groupID, userResponse){
         const connection = await pool.getConnection()
         try{
             if(userResponse){
-                await createUserGroupConnection(jwtPayload.payload.sub, groupID, jwtPayload.payload.username, false)
+                await createUserGroupConnection(jwtPayload.payload.sub, groupID, false)
             }
             const query = "DELETE FROM invitationsTable WHERE userID = ? AND groupID = ?"
             await connection.query(query, [jwtPayload.payload.sub, groupID])

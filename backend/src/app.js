@@ -1,7 +1,6 @@
 import express from 'express'
 import jwt from 'jsonwebtoken'
 import {createPool} from 'mariadb'
-import bcrypt from 'bcrypt'
 import {router as userRouter} from './user-router.js'
 import {router as groupRouter} from './group-router.js'
 import {router as eventRouter} from './event-router.js'
@@ -53,24 +52,39 @@ app.post("/login", async function(request, response){
     if(result.success){
         
         const payload = {
-            sub: result.id,
-            username: username,
+            sub: result.user.userID,
         }
-
-        jwt.sign(payload, ACCESS_TOKEN_SECRET, function(error, accessToken){
+        
+        jwt.sign(payload, ACCESS_TOKEN_SECRET, function(error, access_token){
 
             if (error) {
-                response.status(500).end()
+                response.status(500).json({error})
             } else {
-                response.status(200).json({
-                    access_token: accessToken,
-                    type: "bearer",
-                    userID: result.id
-                })
+
+                const idTokenPayload = {
+                    iss: "http://localhost:8080",
+                    sub: result.user.userID,
+                    aud: "Notify.Us",
+                    exp: Math.floor(Date.now() / 1000)+600,
+                    username: result.user.username
+                }
+
+                jwt.sign(idTokenPayload, ACCESS_TOKEN_SECRET, function(error, id_token){
+
+                    if (error) {
+                        response.status(500).json({error})
+
+                    } else {
+                        response.status(200).json({
+                            access_token: access_token,
+                            type: "bearer",
+                            userID: result.user.userID,
+                            id_token: id_token
+                        })
+                    }
+                })   
             }
-
         })
-
     }
     else{
         response.status(400).json({error: "invalid_grant"})

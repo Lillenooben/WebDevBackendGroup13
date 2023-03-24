@@ -19,7 +19,7 @@
 
     let messages = []
 
-    const fetchGroupPromise = fetch("http://localhost:8080/group/" + groupID, {
+    const fetchGroupPromise = fetch("http://localhost:8080/group/" + groupID + "?userID=" + $user.userID, {
         method: "GET",
         headers: {
             "Authorization": "Bearer "+$user.accessToken,
@@ -33,17 +33,10 @@
         },
     })
 
-    let fetchMessagesPromise = fetch("http://localhost:8080/group/" + groupID + "/chat", {
-        method: "GET",
-        headers: {
-            "Authorization": "Bearer "+$user.accessToken,
-        },
-    })
-
     async function pollMessages(){
         pollError = ""
 
-        const response = await fetch("http://localhost:8080/group/" + groupID + "/chat", {
+        const response = await fetch("http://localhost:8080/group/" + groupID + "/chat?userID=" + $user.userID, {
             method: "GET",
             headers: {
                 "Authorization": "Bearer "+$user.accessToken,

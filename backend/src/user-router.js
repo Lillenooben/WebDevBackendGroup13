@@ -82,7 +82,7 @@ router.get("/groups", async function(request, response){
         const connection = await pool.getConnection()
         try{
             
-            const query = `SELECT userGroupConTable.groupID, groupsTable.groupName, groupsTable.groupImage, groupsTable.ownerID, groupsTable.memberCount, groupsTable.eventCount
+            const query = `SELECT userGroupConTable.groupID, userGroupConTable.prevMessageCount, groupsTable.groupName, groupsTable.groupImage, groupsTable.ownerID, groupsTable.memberCount, groupsTable.eventCount, groupsTable.messageCount
                            FROM userGroupConTable 
                            INNER JOIN groupsTable 
                            ON userGroupConTable.groupID=groupsTable.groupID 

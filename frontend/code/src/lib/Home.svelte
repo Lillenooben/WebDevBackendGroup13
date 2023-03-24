@@ -12,7 +12,7 @@
 
 </script>
 
-<h1>Welcome back!</h1>
+<h1>Welcome back, {$user.username}!</h1>
 <h2>Here are your upcoming events:</h2>
 {#await fetchEventsPromise}
     <Loader/>

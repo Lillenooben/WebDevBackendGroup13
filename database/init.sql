@@ -13,15 +13,16 @@ CREATE TABLE IF NOT EXISTS groupsTable (
     groupImage MEDIUMTEXT,
     memberCount INT,
     eventCount INT,
+    messageCount INT,
     FOREIGN KEY (ownerID) REFERENCES usersTable(userID) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS userGroupConTable (
     userID INT,
     groupID INT,
-    nickname VARCHAR(14),
     isOwner BOOLEAN,
     notifEnabled BOOLEAN,
+    prevMessageCount INT,
     FOREIGN KEY (userID) REFERENCES usersTable(userID) ON DELETE CASCADE,
     FOREIGN KEY (groupID) REFERENCES groupsTable(groupID) ON DELETE CASCADE
 );
@@ -78,3 +79,8 @@ CREATE TRIGGER decrement_events
 AFTER DELETE ON eventsTable
 FOR EACH ROW
 UPDATE groupsTable SET groupsTable.eventCount = groupsTable.eventCount-1 WHERE groupsTable.groupID = OLD.groupID;
+
+CREATE TRIGGER increment_messages
+AFTER INSERT ON messagesTable
+FOR EACH ROW
+UPDATE groupsTable SET groupsTable.messageCount = groupsTable.messageCount+1 WHERE groupsTable.groupID = NEW.groupID;

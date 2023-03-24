@@ -2,6 +2,7 @@
     import { user } from "../user-store.js"
     import { Link, navigate } from "svelte-routing"
     import Loader from "./Loader.svelte"
+    import jwt_decode from "jwt-decode"
 
     let loading = false
     let username = ""
@@ -29,7 +30,7 @@
                 break
             case 400:
                 loading = false
-
+                
                 switch (body.error) {
                     case "invalid_grant":
                         error = "Incorrect username or password"
@@ -40,10 +41,19 @@
                 }
                 break
             case 200:
+                const decoded = jwt_decode(body.id_token)
+                // I had to add the comments below because i could not find another way to stop getting errors that the requested
+                // properties do not exist on type 'unknown'. The properties are guaranteed to exist. 
+                // @ts-ignore
+                const userID = decoded.sub
+                // @ts-ignore
+                const username = decoded.username
+
                 $user = {
                     isLoggedIn: true,
                     accessToken: body.access_token,
-                    userID: body.userID
+                    userID: userID,
+                    username: username
                 }
                 navigate("/")
         }

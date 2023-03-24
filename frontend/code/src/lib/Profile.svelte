@@ -109,7 +109,8 @@
         $user = {
             isLoggedIn: false,
             accessToken: "",
-            userID: ""
+            userID: "",
+            username: ""
         }
         navigate("/login")
     }
