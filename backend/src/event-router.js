@@ -64,7 +64,7 @@ router.delete("/:eventID/delete", async function(request, response){
         try{
             const query = "DELETE FROM eventsTable WHERE eventID = ?"
             await connection.query(query, [eventID])
-            response.status(200).end()
+            response.status(204).end()
 
         }catch(error){
             console.log(error)

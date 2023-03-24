@@ -1,5 +1,5 @@
 <script>
-    import { navigate } from "svelte-routing";
+    import { Link, navigate } from "svelte-routing";
     import { user } from "../user-store.js"
     import Loader from "./Loader.svelte"
     import { onDestroy, onMount } from "svelte"
@@ -9,7 +9,8 @@
 
     let loading = false
     let inviteResponseMessage = ""
-    let deleteError = ""
+    let deleteErrorGroup = ""
+    let deleteErrorEvent = ""
 
     let chatMsg = ""
     let chatError = ""
@@ -25,7 +26,7 @@
         },
     })
 
-    const fetchEventsPromise = fetch("http://localhost:8080/group/" + groupID + "/events", {
+    let fetchEventsPromise = fetch("http://localhost:8080/group/" + groupID + "/events", {
         method: "GET",
         headers: {
             "Authorization": "Bearer "+$user.accessToken,
@@ -97,7 +98,7 @@
     }
 
     async function leaveGroup(){
-        deleteError = ""
+        deleteErrorGroup = ""
 
         if (!confirm("Are you sure you wish to leave the group?")) {
             return
@@ -114,12 +115,12 @@
             navigate("../groups")
 
         } else {
-            deleteError = "Something went wrong, reload and try again."
+            deleteErrorGroup = "Something went wrong, reload and try again."
         }
     }
 
     async function deleteGroup() {
-        deleteError = ""
+        deleteErrorGroup = ""
 
         if (!confirm("Are you sure you wish to delete the group? \nThis cannot be undone!")) {
             return
@@ -136,7 +137,7 @@
             navigate("../groups")
 
         } else {
-            deleteError = "Something went wrong, reload and try again."
+            deleteErrorGroup = "Something went wrong, reload and try again."
         }
     }
 
@@ -161,6 +162,28 @@
         } else {
             const body = await response.json()
             chatError = body.error
+        }
+    }
+
+    async function deleteEvent(eventID) {
+
+        const response = await fetch("http://localhost:8080/event/" + eventID + "/delete", {
+            method: "DELETE",
+            headers: {
+                "Authorization": "Bearer "+$user.accessToken,
+            },
+        })
+
+        if (response.status == 204) {
+            fetchEventsPromise = fetch("http://localhost:8080/group/" + groupID + "/events", {
+                method: "GET",
+                headers: {
+                    "Authorization": "Bearer "+$user.accessToken,
+                },
+            })
+        } else {
+            const body = await response.json()
+            deleteErrorEvent = body.error
         }
     }
 
@@ -193,19 +216,26 @@
                         <button on:click={() => navigate(`/create-event/${response.group.groupID}`)}>Create event</button>
                     {/if}
                 </div>
+                <p class="error-text">{deleteErrorEvent}</p>
 
                 {#await fetchEventsPromise}
                     <Loader/>
-                {:then response}
+                {:then eResponse}
 
-                    {#await response.json() then response}
-                        {#if response.eventsArray.length < 1}
+                    {#await eResponse.json() then eResponse}
+                        {#if eResponse.eventsArray.length < 1}
                             <p>No scheduled events</p>
                         {:else}
-                            {#each response.eventsArray as event}
+                            {#each eResponse.eventsArray as event}
                                 <div class="event-card">
                                     <h2 class="card-header">{event.eventTitle}</h2>
                                     <h3 class="card-header">{event.eventDate.split('T')[0]} {event.eventDate.split('T')[1].slice(0, 5)}</h3>
+                                    {#if response.isOwner}
+                                        <div class="button-wrapper">
+                                            <Link to="event/update/{event.eventID}">Edit</Link>
+                                            <button class="text-button" on:click={() => deleteEvent(event.eventID)}>Delete</button>
+                                        </div>
+                                    {/if}
                                     {#if (event.eventDesc != "")}
                                         <p>{event.eventDesc}</p>
                                     {:else}
@@ -263,7 +293,7 @@
         {:else}
             <button class="red-button" on:click={leaveGroup}>Leave Group</button> 
         {/if}
-        <p class="error-text">{deleteError}</p>
+        <p class="error-text">{deleteErrorGroup}</p>
 
     {/await}
 
@@ -326,7 +356,7 @@
         margin: 0.2em 0 0 0;
     }
     .red-button {
-        background-color: red;    
+        background-color: red;
     }
     .content-wrapper {
         display: flex;
@@ -340,7 +370,7 @@
     }
     #chat-container {
         margin: 1em;
-        background-color: #92A1B3;
+        background-color: #a5a5a5;
         border-radius: 25px;
         border: 2px solid black;
         height: 29em;
@@ -376,5 +406,20 @@
     .error-chat {
         color: red;
         margin-top: 0;
+    }
+    .button-wrapper {
+        position: absolute;
+        right: 0;
+        top: 0;
+        margin-right: 0.5em;
+    }
+    .text-button {
+        Border: 0px;
+        background-color: rgba(255, 255, 255, 0);
+        padding: 0;
+        color: #3f46c4;
+    }
+    .text-button:hover {
+        color: #0e17b3;
     }
 </style>

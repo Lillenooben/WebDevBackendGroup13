@@ -43,6 +43,7 @@
                 $user = {
                     isLoggedIn: true,
                     accessToken: body.access_token,
+                    userID: body.userID
                 }
                 navigate("/")
         }

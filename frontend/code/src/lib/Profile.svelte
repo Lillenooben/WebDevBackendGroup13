@@ -109,6 +109,7 @@
         $user = {
             isLoggedIn: false,
             accessToken: "",
+            userID: ""
         }
         navigate("/login")
     }
@@ -167,7 +168,7 @@
                         </div>
 
                         <div>
-                            <label for="confPassword">confirm new password: </label>
+                            <label for="confPassword">Confirm new password: </label>
                             <input type="password" name="confPassword" bind:value={confPassword}>
                         </div>
 
