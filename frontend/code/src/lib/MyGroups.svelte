@@ -5,14 +5,14 @@
 
     let menuOpen = false
 
-    const fetchGroupsPromise = fetch("http://localhost:8080/user/groups", {
+    const fetchGroupsPromise = fetch("http://localhost:8080/user/groups?userID=" + $user.userID, {
         method: "GET",
         headers: {
             "Authorization": "Bearer "+$user.accessToken,
         },
     })
 
-    let fetchInvitesPromise = fetch("http://localhost:8080/group/invites", {
+    let fetchInvitesPromise = fetch("http://localhost:8080/group/invites?userID=" + $user.userID, {
         method: "GET",
         headers: {
             "Authorization": "Bearer "+$user.accessToken,
@@ -33,14 +33,14 @@
     }
 
     async function rejectInvitation(groupID){
-        fetch("http://localhost:8080/group/" + groupID + "/invite", {
+        fetch("http://localhost:8080/group/" + groupID + "/invite?userID=" + $user.userID, {
             method: "DELETE",
             headers: {
                 "Authorization": "Bearer "+$user.accessToken,
             },
         })
 
-        fetchInvitesPromise = fetch("http://localhost:8080/group/invites", {
+        fetchInvitesPromise = fetch("http://localhost:8080/group/invites?userID=" + $user.userID, {
             method: "GET",
             headers: {
                 "Authorization": "Bearer "+$user.accessToken,

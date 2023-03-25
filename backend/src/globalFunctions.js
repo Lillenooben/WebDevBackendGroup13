@@ -75,8 +75,8 @@ export async function addUser(username, password){
 
     try{
         const hashedPassword = await hashPassword(password)
-        const query = "INSERT INTO usersTable (username, userPassword, profileImage, isActive) VALUES (?,?,?,?)"
-        await connection.query(query, [username, hashedPassword, "", true])
+        const query = "INSERT INTO usersTable (username, userPassword, profileImage) VALUES (?,?,?)"
+        await connection.query(query, [username, hashedPassword, ""])
         didSucceed = true
     }catch(error){
         console.log(error)
@@ -131,24 +131,6 @@ export async function updateGroupData(groupData){
     connection.release()
 }
 
-export async function updateUserData(userData){
-    bcrypt.hash(userData[1], salt, async function(err, hash){
-        userData[1] = hash
-        try{
-            const connection = await pool.getConnection()
-            const query = "UPDATE usersTable SET username = ?, userPassword = ?, profilePicture = ?, isActive = ? WHERE userID = ?"
-            await connection.query(query, userData)
-            connection.release()
-            return true
-        }catch(error){
-            connection.release()
-            console.log(error)
-            console.log(err)
-            return false
-        }
-    })
-}
-
 export async function createUserEventConnection(groupID){
     const connection = await pool.getConnection()
     try{
@@ -160,22 +142,26 @@ export async function createUserEventConnection(groupID){
         const eventIDsFromGroupID = await connection.query(query, [groupID])
         const eventIDFromLatestEvent = eventIDsFromGroupID[0].eventID
 
-        query = "INSERT INTO userEventConTable (userID, eventID, isOptIn) VALUES (?,?,?)"
+        query = "INSERT INTO userEventConTable (userID, eventID) VALUES (?,?)"
         for (let userID of userIDsArray){
-            await connection.query(query, [userID, eventIDFromLatestEvent, true])
+            await connection.query(query, [userID, eventIDFromLatestEvent])
         }
-        connection.release()
+
     }catch(error){
-        connection.release()
         console.log(error)
+        
+    }finally{
+        if (connection) {
+            connection.release()
+        }
     }
 }
 
 export async function createUserGroupConnection(userID, groupID, isOwner){
     const connection = await pool.getConnection()
     try{
-        const query = "INSERT INTO userGroupConTable (userID, groupID, isOwner, notifEnabled) VALUES (?,?,?,?)"
-        await connection.query(query, [userID, groupID, isOwner, true])
+        const query = "INSERT INTO userGroupConTable (userID, groupID, isOwner, prevMessageCount) VALUES (?,?,?,?)"
+        await connection.query(query, [userID, groupID, isOwner, 0])
     }catch(error){
         console.log(error)
     }finally{
@@ -293,12 +279,4 @@ export async function getEventFromEventID(eventID){
     const event = await connection.query(query, [eventID])
     connection.release()
     return event
-}
-
-export async function getOptStatusFromUserEventConnection(userID, eventID){
-    const connection = await pool.getConnection()
-    const query = "SELECT isOptIn FROM userEventConTable WHERE userID = ? AND eventID = ?"
-    const result = await connection.query(query, [userID, eventID])
-    connection.release()
-    return result
 }

@@ -3,7 +3,7 @@
     import { navigate } from "svelte-routing"
     import Loader from "./Loader.svelte"
 
-    const fetchUserPromise = fetch("http://localhost:8080/user/get", {
+    const fetchUserPromise = fetch("http://localhost:8080/user/get?userID=" + $user.userID, {
         method: "GET",
         headers: {
             "Authorization": "Bearer "+$user.accessToken,
@@ -44,7 +44,7 @@
                 imageData: avatar
             }
 
-            const response = await fetch("http://localhost:8080/user/avatar", {
+            const response = await fetch("http://localhost:8080/user/avatar?userID=" + $user.userID, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -81,7 +81,7 @@
             confPw: confPassword,
         }
 
-        const response = await fetch("http://localhost:8080/user/password", {
+        const response = await fetch("http://localhost:8080/user/password?userID=" + $user.userID, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",

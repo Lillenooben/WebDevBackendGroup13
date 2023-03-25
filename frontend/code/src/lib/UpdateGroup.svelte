@@ -27,7 +27,7 @@
             imageData: avatar
         }
 
-        const response = await fetch("http://localhost:8080/group/" + groupID + "/update", {
+        const response = await fetch("http://localhost:8080/group/" + groupID + "/update?userID=" + $user.userID, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",

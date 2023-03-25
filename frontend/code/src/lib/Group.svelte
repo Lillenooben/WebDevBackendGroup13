@@ -66,7 +66,7 @@
             return
         }
 
-        const response = await fetch("http://localhost:8080/group/" + groupID + "/leave", {
+        const response = await fetch("http://localhost:8080/group/" + groupID + "/leave?userID=" + $user.userID, {
             method: "DELETE",
             headers: {
                 "Authorization": "Bearer "+$user.accessToken,
@@ -88,7 +88,7 @@
             return
         }
 
-        const response = await fetch("http://localhost:8080/group/" + groupID + "/delete", {
+        const response = await fetch("http://localhost:8080/group/" + groupID + "/delete?userID=" + $user.userID, {
             method: "DELETE",
             headers: {
                 "Authorization": "Bearer "+$user.accessToken,
@@ -110,7 +110,7 @@
             message: chatMsg,
         }
         
-        const response = await fetch("http://localhost:8080/group/" + groupID + "/chat", {
+        const response = await fetch("http://localhost:8080/group/" + groupID + "/chat?userID=" + $user.userID, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

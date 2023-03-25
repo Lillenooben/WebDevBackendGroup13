@@ -20,7 +20,7 @@
             date: eventDate,
         }
 
-        const response = await fetch("http://localhost:8080/group/" + groupID + "/event", {
+        const response = await fetch("http://localhost:8080/group/" + groupID + "/event?userID=" + $user.userID, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

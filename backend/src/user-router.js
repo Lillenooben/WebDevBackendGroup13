@@ -80,17 +80,19 @@ router.get("/groups", async function(request, response){
     if (authResult.succeeded) {
         
         const connection = await pool.getConnection()
+        const userID = request.query.userID
+
         try{
             
-            const query = `SELECT userGroupConTable.groupID, userGroupConTable.prevMessageCount, groupsTable.groupName, groupsTable.groupImage, groupsTable.ownerID, groupsTable.memberCount, groupsTable.eventCount, groupsTable.messageCount
-                           FROM userGroupConTable 
-                           INNER JOIN groupsTable 
-                           ON userGroupConTable.groupID=groupsTable.groupID 
+            const query = `SELECT ugT.groupID, ugT.prevMessageCount, gT.groupName, gT.groupImage, gT.ownerID, gT.memberCount, gT.eventCount, gT.messageCount
+                           FROM userGroupConTable AS ugT
+                           INNER JOIN groupsTable AS gT
+                           ON ugT.groupID = gT.groupID 
                            WHERE userID = ?`
-            const groupsArray = await connection.query(query, [authResult.payload.sub])
+            const groupsArray = await connection.query(query, [userID])
 
             groupsArray.forEach(group => {
-                if (group.ownerID == authResult.payload.sub) {
+                if (group.ownerID == userID) {
                     group.isOwner = true
                 } else {
                     group.isOwner = false
@@ -119,8 +121,10 @@ router.get("/get", async function(request, response){
 
     if (authResult.succeeded) {
 
+        const userID = request.query.userID
+
         try{
-            const userFromUserID = await mod.getUserByUserID(authResult.payload.sub)
+            const userFromUserID = await mod.getUserByUserID(userID)
             const user = userFromUserID[0]
             response.status(200).json(user)
             
@@ -142,11 +146,12 @@ router.put("/avatar", async function(request, response){
     if (authResult.succeeded) {
 
         const enteredImage = request.body.imageData
+        const userID = request.query.userID
         const connection = await pool.getConnection()
 
         try{
             const query = "UPDATE usersTable SET profileImage = ? WHERE userID = ?"
-            await connection.query(query, [enteredImage, authResult.payload.sub])
+            await connection.query(query, [enteredImage, userID])
             response.status(200).end()
 
         }catch(error){
@@ -183,10 +188,11 @@ router.put("/password", async function(request, response){
         }
 
         const connection = await pool.getConnection()
+        const userID = request.query.userID
         
         try{
             let query = "SELECT userPassword FROM usersTable WHERE userID = ?"
-            const oldPassword = await connection.query(query, [authResult.payload.sub])
+            const oldPassword = await connection.query(query, [userID])
             const enteredOldPwHash = await mod.hashPassword(body.oldPw)
 
             if (oldPassword[0].userPassword != enteredOldPwHash) {
@@ -196,7 +202,7 @@ router.put("/password", async function(request, response){
 
             const enteredNewPwHash = await mod.hashPassword(body.newPw)
             query = "UPDATE usersTable SET userPassword = ? WHERE userID = ?"
-            await connection.query(query, [enteredNewPwHash, authResult.payload.sub])
+            await connection.query(query, [enteredNewPwHash, userID])
 
             response.status(200).end()
 
@@ -215,48 +221,6 @@ router.put("/password", async function(request, response){
     }
 })
 
-// unused
-router.delete("/:userID/delete", async function(request, response){
-    const userID = parseInt(request.params.userID)
-    try{
-        await mod.deleteUser(userID)
-        response.status(200).redirect("/")
-    }catch(error){
-        console.log(error)
-        response.status(500).end("Internal Server Error")
-    }
-})
-
-// unused
-router.put("/:userID/update", async function(request, response){
-    const userID = parseInt(request.params.userID)
-    const updatedUsername = request.body.username
-    const updatedUserPassword = request.body.password
-    const updatedProfilePicture = null //request.body.groupImage??
-    const updatedIsActive = request.body.isActive
-    const arrayOfUserData = [updatedUsername, updatedUserPassword, updatedProfilePicture, updatedIsActive, userID]
-    if(mod.updateUserData(arrayOfUserData)){
-        response.status(200).redirect("/")
-    }
-    else{
-        console.log(error)
-        response.status(500).end("Internal Server Error")
-    }
-    
-})
-
-// unused
-router.get("/:userID/invitations", async function(request, response){
-    try{
-        const userID = parseInt(request.params.userID)
-        const invitationsFromUserID = await mod.getInvitationsFromUserID(userID)
-        response.status(200).json(invitationsFromUserID)
-    }catch(error){
-        console.log(error)
-        response.status(500).end("Internal Server Error")
-    }
-})
-
 router.get("/events", async function(request, response){
 
     const authResult = mod.authorizeJWT(request)
@@ -264,6 +228,7 @@ router.get("/events", async function(request, response){
     if (authResult.succeeded) {
 
         const connection = await pool.getConnection()
+        const userID = request.query.userID
 
         try{
             const query = `SELECT eventsTable.eventID, eventsTable.groupID, eventsTable.eventTitle, eventsTable.eventDesc, eventsTable.eventDate, groupsTable.groupName
@@ -272,7 +237,7 @@ router.get("/events", async function(request, response){
                            INNER JOIN userGroupConTable ON groupsTable.groupID = userGroupConTable.groupID
                            WHERE userGroupConTable.userID = ?
                            ORDER BY eventsTable.eventDate ASC`
-            const eventsArray = await connection.query(query, [authResult.payload.sub])
+            const eventsArray = await connection.query(query, [userID])
 
             response.status(200).json({eventsArray})
 

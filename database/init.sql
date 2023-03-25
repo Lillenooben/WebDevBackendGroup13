@@ -2,8 +2,7 @@ CREATE TABLE IF NOT EXISTS usersTable (
     userID INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(14) unique,
     userPassword CHAR(72),
-    profileImage MEDIUMTEXT,
-    isActive BOOLEAN
+    profileImage MEDIUMTEXT
 );
 
 CREATE TABLE IF NOT EXISTS groupsTable (
@@ -21,7 +20,6 @@ CREATE TABLE IF NOT EXISTS userGroupConTable (
     userID INT,
     groupID INT,
     isOwner BOOLEAN,
-    notifEnabled BOOLEAN,
     prevMessageCount INT,
     FOREIGN KEY (userID) REFERENCES usersTable(userID) ON DELETE CASCADE,
     FOREIGN KEY (groupID) REFERENCES groupsTable(groupID) ON DELETE CASCADE
@@ -47,7 +45,6 @@ CREATE TABLE IF NOT EXISTS eventsTable (
 CREATE TABLE IF NOT EXISTS userEventConTable (
     userID INT,
     eventID INT,
-    isOptIn BOOLEAN,
     FOREIGN KEY (userID) REFERENCES usersTable(userID) ON DELETE CASCADE,
     FOREIGN KEY (eventID) REFERENCES eventsTable(eventID) ON DELETE CASCADE
 );

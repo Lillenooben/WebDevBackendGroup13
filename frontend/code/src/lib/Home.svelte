@@ -3,7 +3,7 @@
     import Loader from "./Loader.svelte"
     import { navigate } from "svelte-routing"
 
-    const fetchEventsPromise = fetch("http://localhost:8080/user/events", {
+    const fetchEventsPromise = fetch("http://localhost:8080/user/events?userID=" + $user.userID, {
         method: "GET",
         headers: {
             "Authorization": "Bearer "+$user.accessToken,
