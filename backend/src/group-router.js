@@ -511,4 +511,47 @@ router.post("/:groupID/chat", async function(request, response){
 
 })
 
+router.delete("/:groupID/member", async function(request, response){
+
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        const connection = await pool.getConnection()
+        const groupID = request.params.groupID
+        const deleteUserID = request.body.deleteUserID
+        const requestUserID = request.body.requestUserID
+
+        try{
+            let query = "SELECT * FROM groupsTable WHERE groupID = ? AND ownerID = ?"
+            const result = await connection.query(query, [groupID, requestUserID])
+
+            if (result.length > 0) {
+                query = "DELETE FROM userGroupConTable WHERE groupID = ? AND userID = ?"
+                await connection.query(query, [groupID, deleteUserID])
+                response.status(204).end()
+
+            } else {
+                response.status(401).json({error: "Unauthorized operation"})
+            }
+
+        }catch(error){
+            console.log(error)
+            if (error == "ER_SP_FETCH_NO_DATA") {
+                response.status(401).json({error: "Unauthorized operation"})
+            } else {
+                response.status(500).json({error: "Internal Server Error"})
+            }
+
+        }finally{
+            if (connection) {
+                connection.release()
+            }
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
+    }
+})
+
 export {router}
