@@ -100,8 +100,6 @@ router.get("/invites", async function(request, response){
 
 })
 
-// TODO: Make sure the person sending the request is the owner of the group
-//       Also make sure you cannot invite users who are already members
 router.post("/:groupID/invite", async function(request, response){
 
     const authResult = mod.authorizeJWT(request)
@@ -109,17 +107,24 @@ router.post("/:groupID/invite", async function(request, response){
     if (authResult.succeeded) {
 
         const connection = await pool.getConnection()
+        const groupID = parseInt(request.params.groupID)
 
         try{
             const username = request.body.username
             let query = "SELECT userID FROM usersTable WHERE username = ?"
-            const result = await connection.query(query, username)
+            const resultUser = await connection.query(query, [username])
 
-            const groupID = parseInt(request.params.groupID)
-            query = "INSERT INTO invitationsTable (userID, groupID) VALUES (?, ?)"
-            await connection.query(query, [result[0].userID, groupID])
-
-            response.status(201).end()
+            query = "SELECT COUNT(*) FROM userGroupConTable WHERE userID = ? AND groupID = ?"
+            const resultCount = await connection.query(query, [resultUser[0].userID, groupID])
+            
+            if (Number(resultCount[0]['COUNT(*)']) > 0) {
+                response.status(400).json({error: "User is already in the group"})
+            } else {
+                query = "INSERT INTO invitationsTable (userID, groupID) VALUES (?, ?)"
+                await connection.query(query, [resultUser[0].userID, groupID])
+    
+                response.status(201).end()
+            }
 
         }catch(error){
             if (error.code == "ER_DUP_ENTRY") {
@@ -148,8 +153,15 @@ router.post("/:groupID/invite/accept", async function(request, response){
 
     if (authResult.succeeded) {
 
+        const userID = request.query.userID
+        const connection = await pool.getConnection()
+
         try{
-            mod.createUserGroupConnection(authResult.payload.sub, request.params.groupID, false)
+            mod.createUserGroupConnection(userID, request.params.groupID, false)
+
+            const query = "DELETE FROM invitationsTable WHERE userID = ? AND groupID = ?"
+            await connection.query(query, [userID, request.params.groupID])
+
             response.status(201).end()
         
         }catch(error){
@@ -265,8 +277,11 @@ router.get("/:groupID", async function(request, response){
         const userID = parseInt(request.query.userID)
 
         try{
-            const query = "SELECT * FROM groupsTable WHERE groupID = ?"
-            const group = await connection.query(query, [groupID])
+            const query = `SELECT gT.groupID, gT.ownerID, gT.groupName, gT.groupImage, gT.memberCount, gT.eventCount, gT.messageCount
+                           FROM groupsTable AS gT
+                           INNER JOIN userGroupConTable ON userGroupConTable.groupID = gT.groupID
+                           WHERE gT.groupID = ? AND userGroupConTable.userID = ?`
+            const group = await connection.query(query, [groupID, userID])
 
             if (group.length == 0) {
                 throw "ER_SP_FETCH_NO_DATA"
@@ -519,8 +534,12 @@ router.delete("/:groupID/member", async function(request, response){
 
         const connection = await pool.getConnection()
         const groupID = request.params.groupID
-        const deleteUserID = request.body.deleteUserID
-        const requestUserID = request.body.requestUserID
+        const deleteUserID = request.query.deleteUserID
+        const requestUserID = request.query.requestUserID
+
+        if (deleteUserID == requestUserID) {
+            response.status(400).json({error: "Cannot uninvite yourself from group."})
+        }
 
         try{
             let query = "SELECT * FROM groupsTable WHERE groupID = ? AND ownerID = ?"

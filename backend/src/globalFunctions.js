@@ -252,7 +252,7 @@ export async function createInvitation(userID, groupID){
 
 export async function getUsersFromGroupID(groupID){
     const connection = await pool.getConnection()
-    const query = `SELECT userGroupConTable.userID, usersTable.username FROM userGroupConTable 
+    const query = `SELECT userGroupConTable.userID, usersTable.username, usersTable.profileImage FROM userGroupConTable 
     INNER JOIN usersTable ON userGroupConTable.userID = usersTable.userID 
     WHERE userGroupConTable.groupID = ?;`
     const groupMembersFromGroupID = await connection.query(query, [groupID])

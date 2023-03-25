@@ -5,10 +5,7 @@
     import { onDestroy, onMount } from "svelte"
 
     const groupID = window.location.pathname.split("/").pop()
-    let username = ""
 
-    let loading = false
-    let inviteResponseMessage = ""
     let deleteErrorGroup = ""
     let deleteErrorEvent = ""
 
@@ -47,7 +44,6 @@
 
         if (response.status == 200) {
             messages = body.messages
-            console.log(messages)
         } else {
             pollError = body.error
         }
@@ -62,34 +58,6 @@
     onDestroy(async () => {
         clearTimeout(timeout)
     })
-
-    async function createInvite(){
-        inviteResponseMessage = ""
-        loading = true
-
-        const data = {
-            username: username,
-        }
-
-        const response = await fetch("http://localhost:8080/group/" + groupID + "/invite", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer "+$user.accessToken,
-            },
-            body: JSON.stringify(data)
-        })
-
-        if (response.status == 201) {
-            inviteResponseMessage = "Invitation sent!"
-            username = ""
-            loading = false
-        } else {
-            const body = await response.json()
-            inviteResponseMessage = body.error
-            loading = false
-        }
-    }
 
     async function leaveGroup(){
         deleteErrorGroup = ""
@@ -198,8 +166,9 @@
 
         <h1 id="title">{response.group.groupName}</h1>
         {#if response.isOwner}
-            <button class="edit-button" on:click={() => navigate(`/group/update/${response.group.groupID}`)}>Edit group</button>
+            <button class="header-button" on:click={() => navigate(`/group/update/${response.group.groupID}`)}>Edit group</button>
         {/if}
+        <button class="header-button" on:click={() => navigate(`/group/${response.group.groupID}/members`)}>Members</button>
 
         <div class="content-wrapper">
 
@@ -261,36 +230,18 @@
                             {/if}
                         {/each}
                     </div>
-                    
-                    <form on:submit|preventDefault={sendMessage}>
-                            <input type="text" bind:value={chatMsg} required/>
-                            <button type="submit" class="submit-button">Send</button>
-                            <p class="error-chat">{chatError}</p>
-                    </form>
-                </div>
 
+                    <form on:submit|preventDefault={sendMessage}>
+                        <input type="text" bind:value={chatMsg} required/>
+                        <button type="submit" class="submit-button">Send</button>
+                        <p class="error-chat">{chatError}</p>
+                    </form>
+
+                </div>
             </div>
         </div>
 
         {#if response.isOwner}
-
-            <form class="invite-form" on:submit|preventDefault={createInvite}> <!--TODO: make it look nicer-->
-                <h2>Add member</h2>
-
-                    {#if loading}
-                        <Loader/>
-                    {/if}
-
-                    <p>{inviteResponseMessage}</p>
-
-                <div>
-                    <label for="username">Username: </label>
-                    <input type="text" name="username" bind:value={username}>
-                </div>
-                
-                <button type="submit" class="submit-button">Send invite</button>
-            </form>
-
             <button class="red-button" on:click={deleteGroup}>Delete Group</button>
         {:else}
             <button class="red-button" on:click={leaveGroup}>Leave Group</button> 
@@ -320,7 +271,7 @@
         vertical-align: top;
         margin: 0.75em 0 0 0.2em
     }
-    .edit-button {
+    .header-button {
         display: inline-block;
         vertical-align: top;
         margin: 3.5em 0 0 1em
@@ -330,14 +281,6 @@
     }
     .submit-button {
         margin-top: 0.5em;
-    }
-    .invite-form {
-        background-color: #b8b8b8;
-        width: 30em;
-        margin-left: auto;
-        margin-right: 9em;
-        border: 2px solid black;
-        padding-bottom: 1em;
     }
     .event-card {
         position: relative;

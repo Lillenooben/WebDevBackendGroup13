@@ -13,7 +13,7 @@
         error = ""
         loading = true
 
-        const response = await fetch("http://localhost:8080/login", {
+        const response = await fetch("http://localhost:8080/tokens", {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"

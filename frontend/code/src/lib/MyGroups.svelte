@@ -20,21 +20,16 @@
     })
 
     async function acceptInvitation(groupID){
-        fetch("http://localhost:8080/group/" + groupID + "/invite/accept", {
+        const response = await fetch("http://localhost:8080/group/" + groupID + "/invite/accept?userID=" + $user.userID, {
             method: "POST",
             headers: {
                 "Authorization": "Bearer "+$user.accessToken,
             },
         })
 
-        fetch("http://localhost:8080/group/" + groupID + "/invite", {
-            method: "DELETE",
-            headers: {
-                "Authorization": "Bearer "+$user.accessToken,
-            },
-        })
-
-        navigate(`/group/${groupID}`)
+        if (response.status == 201) {
+            navigate(`/group/${groupID}`)
+        }
     }
 
     async function rejectInvitation(groupID){

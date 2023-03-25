@@ -10,6 +10,7 @@
   import CreateEvent from "./lib/CreateEvent.svelte"
   import UpdateGroup from "./lib/UpdateGroup.svelte"
   import UpdateEvent from "./lib/UpdateEvent.svelte"
+  import GroupMembers from "./lib/GroupMembers.svelte"
 
   export let url = ""
 
@@ -46,6 +47,7 @@
         <Route path="signup" component="{Signup}" />
         <Route path="create-event/:id" component="{CreateEvent}" />
         <Route path="event/update/:id" component="{UpdateEvent}" />
+        <Route path="group/:id/members" component="{GroupMembers}" />
     </main>
   </Router>
 

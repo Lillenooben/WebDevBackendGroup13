@@ -37,7 +37,7 @@ app.use(function(req, res, next) {
 
 })
 
-app.post("/login", async function(request, response){
+app.post("/tokens", async function(request, response){
     const grantType = request.body.grant_type
     const username = request.body.username
     const password = request.body.password
@@ -65,6 +65,7 @@ app.post("/login", async function(request, response){
                     iss: "http://localhost:8080",
                     sub: result.user.userID,
                     aud: "Notify.Us",
+                    iat: Math.floor(Date.now() / 1000),
                     exp: Math.floor(Date.now() / 1000)+600,
                     username: result.user.username
                 }
@@ -78,7 +79,6 @@ app.post("/login", async function(request, response){
                         response.status(200).json({
                             access_token: access_token,
                             type: "bearer",
-                            userID: result.user.userID,
                             id_token: id_token
                         })
                     }
