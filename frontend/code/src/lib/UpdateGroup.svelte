@@ -48,7 +48,7 @@
     async function fetchGroupInfo(){
         error = ""
 
-        const response = await fetch("http://localhost:8080/group/" + groupID, {
+        const response = await fetch("http://localhost:8080/group/" + groupID + "?userID=" + $user.userID, {
             method: "GET",
             headers: {
                 "Authorization": "Bearer "+$user.accessToken,
@@ -94,25 +94,3 @@
 
     <button type="submit" class="submit-button">Update</button>
 </form>
-
-<style>
-    .avatar {
-        object-fit: cover;
-        border: 3px solid #213547;
-        border-radius: 50%;
-        height: 100px;
-        width: 100px;
-    }
-    .error-text {
-        color: red
-    }
-    input[type=text] {
-        width: 19.1em;
-        padding: 8px 14px;
-        margin: 8px 0;
-        box-sizing: border-box;
-    }
-    .submit-button {
-        margin-top: 1em;
-    }
-</style>

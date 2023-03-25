@@ -104,16 +104,4 @@
         vertical-align: top;
         margin: 0.5em 0 0 0.2em
     }
-    input {
-        width: 19.1em;
-        padding: 8px 14px;
-        margin: 8px 0;
-        box-sizing: border-box;
-    }
-    .error-text {
-        color: red
-    }
-    .submit-button {
-        margin-top: 0.5em;
-    }
 </style>

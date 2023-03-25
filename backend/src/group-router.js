@@ -63,8 +63,7 @@ router.post("/create", async function(request, response){
             }
         }
     }else{
-        console.log(authResult.error)
-        response.status(401).end({error: "Unauthorized"})
+        response.status(401).end({error: "Access unauthorized"})
     }
 })
 
@@ -356,7 +355,7 @@ router.post("/:groupID/event", async function(request, response){
             query = "INSERT INTO eventsTable (groupID, eventTitle, eventDesc, eventDate) VALUES (?,?,?,?)"
             await connection.query(query, [groupID, eventTitle, eventDesc, eventDate])
 
-            await mod.createUserEventConnection(groupID)
+            await mod.createUserEventConnections(groupID)
             
             response.status(201).end()
 
@@ -447,17 +446,36 @@ router.get("/:groupID/events", async function(request, response){
 })
 
 router.get("/:groupID/members", async function(request, response){
-    try{
+
+    const authResult = mod.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        const connection = await pool.getConnection()
         const groupID = parseInt(request.params.groupID)
-        const allMembersIDListFromGroupID = await mod.getUsersFromGroupID(groupID)
 
-        const membersArray = allMembersIDListFromGroupID
+        try{
+            const query = `SELECT userGroupConTable.userID, usersTable.username, usersTable.profileImage 
+                           FROM userGroupConTable 
+                           INNER JOIN usersTable ON userGroupConTable.userID = usersTable.userID 
+                           WHERE userGroupConTable.groupID = ?`
+            const membersArray = await connection.query(query, [groupID])
+            response.status(200).json({membersArray})
 
-        response.status(200).json({membersArray})
-    }catch(error){
-        console.log(error)
-        response.status(500).end("Internal Server Error")
+        }catch(error){
+            console.log(error)
+            response.status(500).end({error: "Internal Server Error"})
+            
+        }finally{
+            if (connection) {
+                connection.release()
+            }
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
     }
+    
 })
 
 router.get("/:groupID/chat", async function(request, response){
@@ -471,10 +489,10 @@ router.get("/:groupID/chat", async function(request, response){
         
         try{
             let query = `SELECT messagesTable.message, messagesTable.userID, usersTable.username
-                           FROM messagesTable
-                           INNER JOIN usersTable ON messagesTable.userID = usersTable.userID
-                           WHERE groupID = ?
-                           ORDER BY messagesTable.messageID DESC`
+                         FROM messagesTable
+                         INNER JOIN usersTable ON messagesTable.userID = usersTable.userID
+                         WHERE groupID = ?
+                         ORDER BY messagesTable.messageID DESC`
             const messages = await connection.query(query, [groupID])
 
             query = "UPDATE userGroupConTable SET prevMessageCount = ? WHERE userID = ? AND groupID = ?"

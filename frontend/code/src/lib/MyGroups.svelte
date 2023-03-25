@@ -106,7 +106,7 @@
                             {/if}
 
                             <h2 class="group-name">{group.groupName}</h2>
-                            <div id="icon-wrapper">
+                            <div class="icon-wrapper">
                                 <h2>
                                     <img class="small-icon" src="/person_icon.png" alt="person icon">{group.memberCount} 
                                     <img class="small-icon" src="/calendar_icon.png" alt="calendar icon">{group.eventCount}
@@ -189,11 +189,6 @@
         filter: drop-shadow(10px 10px 10px #464647ec);
     }
     .avatar {
-        object-fit: cover;
-        border: 3px solid #213547;
-        border-radius: 50%;
-        height: 100px;
-        width: 100px;
         align-self: center;
     }
     .group-name {
@@ -213,12 +208,12 @@
         vertical-align: middle;
         overflow: hidden;
     }
-    #icon-wrapper {
+    .icon-wrapper {
         position: absolute;
         right: 0;
         bottom: 0;
     }
-    #icon-wrapper h2 {
+    .icon-wrapper h2 {
         margin: 0 0.5em 0.5em 0;
     }
     .notification-number {

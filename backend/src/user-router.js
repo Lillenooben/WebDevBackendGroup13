@@ -23,21 +23,6 @@ pool.on('error', function(error){
     console.log("Error from pool", error)
 })
 
-router.get("/getAll", async function(request, response){
-    const connection = await pool.getConnection()
-    try{
-        const query = "SELECT * FROM usersTable ORDER BY userID"
-        const allUsersFromDatabase = await connection.query(query)
-        connection.release()
-        response.status(200).json(allUsersFromDatabase)
-    }catch(error){
-        connection.release()
-        console.log(error)
-        response.status(500).end("Internal Server Error")
-    }
-})
-
-
 router.post("/create", async function(request, response){
     const body = request.body
 
@@ -122,15 +107,22 @@ router.get("/get", async function(request, response){
     if (authResult.succeeded) {
 
         const userID = request.query.userID
+        const connection = await pool.getConnection()
 
         try{
-            const userFromUserID = await mod.getUserByUserID(userID)
-            const user = userFromUserID[0]
+            const query = "SELECT * FROM usersTable WHERE userID = ?"
+            const usersArray = await connection.query(query, [userID])
+            const user = usersArray[0]
             response.status(200).json(user)
             
         }catch(error){
             console.log(error)
             response.status(500).json({error: "Internal Server Error"})
+
+        }finally{
+            if (connection) {
+                connection.release()
+            }
         }
 
     } else {

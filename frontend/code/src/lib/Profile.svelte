@@ -186,34 +186,17 @@
     {/await}
 
 {:catch error}
-    {console.log(error)}
+    
     <p>Something went wrong, try again later.</p>
 
 {/await}
 
 <style>
-    .error-text {
-        color: red;
-        margin: 0.5em;
-    }
     button {
         margin: 1.2em;
     }
     .menu-button {
         margin-bottom: 0em;
-    }
-    input[type=password] {
-        width: 19.1em;
-        padding: 8px 14px;
-        margin: 8px 0;
-        box-sizing: border-box;
-    }
-    .avatar {
-        object-fit: cover;
-        border: 3px solid #213547;
-        border-radius: 50%;
-        height: 100px;
-        width: 100px;
     }
     .dropdown {
         position: relative;
@@ -223,8 +206,8 @@
         display: none;
         background-color: #92A1B3;
         border: 1px solid #ddd;
-    }
+    } 
     .show {
-        display: block;
+        display:block;
     }
 </style>

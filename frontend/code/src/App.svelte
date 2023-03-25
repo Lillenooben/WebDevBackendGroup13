@@ -18,7 +18,6 @@
 
   if (!$user.isLoggedIn) {
     navigate("/login")
-    console.log("not logged in, redirecting")
   }
 </script>
 

@@ -88,50 +88,8 @@ export async function addUser(username, password){
     }
 }
 
-export async function getUserByUserID(userID){
-    const connection = await pool.getConnection()
-    const query = "SELECT * FROM usersTable WHERE userID = ?"
-    const result = await connection.query(query, [userID])
-    connection.release()
-    return result
-}
+export async function createUserEventConnections(groupID){
 
-export async function deleteUser(userID){
-    const connection = await pool.getConnection()
-    const query = "DELETE FROM usersTable WHERE userID = ?"
-    await connection.query(query, [userID])
-    connection.release()
-}
-
-export async function deleteEvent(eventID){
-    const connection = await pool.getConnection()
-    const query = "DELETE FROM eventsTable WHERE eventID = ?"
-    await connection.query(query, [eventID])
-    connection.release()
-}
-
-export async function deleteGroup(groupID){
-    const connection = await pool.getConnection()
-    const query = "DELETE FROM groupsTable WHERE groupID = ?"
-    await connection.query(query, [groupID])
-    connection.release()
-}
-
-export async function updateEventData(eventData){
-    const connection = await pool.getConnection()
-    const query = "UPDATE eventsTable SET eventTitle = ?, eventDesc = ?, eventDate = ? WHERE eventID = ?"
-    await connection.query(query, eventData)
-    connection.release()
-}
-
-export async function updateGroupData(groupData){
-    const connection = await pool.getConnection()
-    const query = "UPDATE groupsTable SET groupName = ?, groupImage = ? WHERE groupID = ?"
-    await connection.query(query, groupData)
-    connection.release()
-}
-
-export async function createUserEventConnection(groupID){
     const connection = await pool.getConnection()
     try{
         let query = "SELECT userID FROM userGroupConTable WHERE groupID = ?"
@@ -172,11 +130,11 @@ export async function createUserGroupConnection(userID, groupID, isOwner){
 }
 
 export async function compareLoginCredentials(username, password){
+    
     const connection = await pool.getConnection()
-    const query = "SELECT * FROM usersTable WHERE username = ?"
 
     try {
-
+        const query = "SELECT * FROM usersTable WHERE username = ?"
         const user = await connection.query(query, [username])
 
         const hashedPassword = user[0].userPassword
@@ -194,89 +152,4 @@ export async function compareLoginCredentials(username, password){
         }
     }
 
-}
-
-export async function getInvitationsFromUserID(userID){
-    const connection = await pool.getConnection()
-    const query = "SELECT * FROM invitationsTable WHERE userID = ?"
-    const invitationsByID = await connection.query(query, [userID])
-    connection.release()
-    return invitationsByID
-}
-
-export async function inivtationResponse(groupID, userResponse){
-
-    const jwtPayload = authorizeJWT(request)
-
-    if(jwtPayload.succeeded){
-        const connection = await pool.getConnection()
-        try{
-            if(userResponse){
-                await createUserGroupConnection(jwtPayload.payload.sub, groupID, false)
-            }
-            const query = "DELETE FROM invitationsTable WHERE userID = ? AND groupID = ?"
-            await connection.query(query, [jwtPayload.payload.sub, groupID])
-            connection.release()
-            response.status(201).end()
-        }catch(error){
-            connection.release()
-            console.log(error)
-            response.status(500).end("Internal Server Error")
-        }
-    }else{
-        console.log(jwtPayload.error)
-        response.status(401).end()
-    }
-}
-
-export async function createInvitation(userID, groupID){
-    const connection = await pool.getConnection()
-    const query = "INSERT INTO invitationsTable (userID, groupID) VALUES (?,?)"
-    await connection.query(query, [userID, groupID])
-    connection.release()
-}
-
-export async function getUsersFromGroupID(groupID){
-    const connection = await pool.getConnection()
-    const query = `SELECT userGroupConTable.userID, usersTable.username, usersTable.profileImage FROM userGroupConTable 
-    INNER JOIN usersTable ON userGroupConTable.userID = usersTable.userID 
-    WHERE userGroupConTable.groupID = ?;`
-    const groupMembersFromGroupID = await connection.query(query, [groupID])
-    connection.release()
-    return groupMembersFromGroupID
-}
-
-export async function getGroupIDsFromUserID(userID){
-    const connection = await pool.getConnection()
-    /*let query = "SELECT * FROM usersTable WHERE userID = ?"
-    const userByID = await connection.query(query, [userID])*/
-    const query = "SELECT groupID FROM userGroupConTable WHERE userID = ?"
-    const userGroupConnections = await connection.query(query, [userID])
-    const groupIDs = getParsedIDs(userGroupConnections)
-    connection.release()
-    return groupIDs
-}
-
-export async function getEventsFromMultipleGroups(groupIDs){
-    const connection = await pool.getConnection()
-    const query = "SELECT * FROM eventsTable WHERE groupID in (?) ORDER BY eventDate ASC"
-    const events = await connection.query(query, [groupIDs])
-    connection.release()
-    return events
-}
-
-export async function getEventsFromGroupID(groupID){
-    const connection = await pool.getConnection()
-    const query = "SELECT * FROM eventsTable WHERE groupID = ?"
-    const events = await connection.query(query, [groupID])
-    connection.release()
-    return events
-}
-
-export async function getEventFromEventID(eventID){
-    const connection = await pool.getConnection()
-    const query = "SELECT * FROM eventsTable WHERE eventID = ?"
-    const event = await connection.query(query, [eventID])
-    connection.release()
-    return event
 }

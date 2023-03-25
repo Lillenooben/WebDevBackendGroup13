@@ -99,18 +99,3 @@
     
     <button type="submit" class="submit-button">Update</button>
 </form>
-
-<style>
-    .error-text {
-        color: red
-    }
-    input {
-        width: 19.1em;
-        padding: 8px 14px;
-        margin: 8px 0;
-        box-sizing: border-box;
-    }
-    .submit-button {
-        margin-top: 1em;
-    }
-</style>

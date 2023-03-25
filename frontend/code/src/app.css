@@ -61,12 +61,34 @@ button {
 button:hover {
   border-color: #646cff;
 }
+.error-text {
+  color: red
+}
+input {
+  width: 19.1em;
+  padding: 8px 14px;
+  margin: 8px 0;
+  box-sizing: border-box;
+}
+.submit-button {
+  margin-top: 0.5em;
+}
+.avatar {
+  object-fit: cover;
+  border: 3px solid #213547;
+  border-radius: 50%;
+  height: 100px;
+  width: 100px;
+}
 
 
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
     background-color: #E6E3D3;
+  }
+  .error-text {
+    color: red
   }
   a:hover {
     color: #003558;

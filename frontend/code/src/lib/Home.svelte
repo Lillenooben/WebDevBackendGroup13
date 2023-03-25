@@ -27,7 +27,7 @@
 
             <section class="card-wrapper">
                 {#each response.eventsArray as event}
-                    <button class="group-card" on:click={() => navigate(`/group/${event.groupID}`)}>
+                    <button class="event-card" on:click={() => navigate(`/group/${event.groupID}`)}>
                         <i class="small-text">{event.groupName}</i>
                         <h2 class="card-header">{event.eventTitle}</h2>
                         <h3 class="card-header">{event.eventDate.split('T')[0]} {event.eventDate.split('T')[1].slice(0, 5)}</h3>
@@ -52,7 +52,7 @@
         flex-wrap: wrap;
         justify-content: center;
     }
-    .group-card {
+    .event-card {
         position: relative;
         column-gap: 4em;
         border-radius: 25px;
@@ -60,15 +60,15 @@
         padding: 0em 1em 0em 1em;
         margin: 1em auto 0;
         width: 30em;
-        height: 10em;
+        min-height: 10em;
         word-wrap: break-word;
         will-change: filter;
         transition: filter 300ms;
     }
-    .group-card:last-of-type {
+    .event-card:last-of-type {
         margin-bottom: 1em;
     }
-    .group-card:hover {
+    .event-card:hover {
         border: 3px solid #0e17b3;
         filter: drop-shadow(10px 10px 10px #464647ec);
     }

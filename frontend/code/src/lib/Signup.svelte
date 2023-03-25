@@ -45,7 +45,6 @@
             loading = false
 
         } catch(error) {
-            console.log(error)
             loading = false
             errors = ["Something went wrong"]
         }
@@ -86,20 +85,7 @@
 </form>
 
 <style>
-    .error-text {
-        color: red;
-        margin: 0.2em;
-    }
     p:last-of-type {
         margin-bottom: 1em;
-    }
-    input {
-        width: 19.1em;
-        padding: 8px 14px;
-        margin: 8px 0;
-        box-sizing: border-box;
-    }
-    .submit-button {
-        margin-top: 0.5em;
     }
 </style>

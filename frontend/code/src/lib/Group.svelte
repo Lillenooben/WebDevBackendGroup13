@@ -32,7 +32,7 @@
 
     async function pollMessages(){
         pollError = ""
-
+        
         const response = await fetch("http://localhost:8080/group/" + groupID + "/chat?userID=" + $user.userID, {
             method: "GET",
             headers: {
@@ -151,7 +151,6 @@
 
 </script>
 
-<!--TODO: Make sure you can't access a group you aren't part of-->
 {#await fetchGroupPromise}
     <Loader/>
 {:then response}
@@ -164,7 +163,7 @@
             <img src={response.group.groupImage} class="avatar" alt="Group Avatar">
         {/if}
 
-        <h1 id="title">{response.group.groupName}</h1>
+        <h1 class="title">{response.group.groupName}</h1>
         {#if response.isOwner}
             <button class="header-button" on:click={() => navigate(`/group/update/${response.group.groupID}`)}>Edit group</button>
         {/if}
@@ -259,14 +258,9 @@
 
 <style>
     .avatar {
-        object-fit: cover;
-        border: 3px solid #213547;
-        border-radius: 50%;
-        height: 100px;
-        width: 100px;
         margin-top: 1em;
     }
-    #title {
+    .title {
         display: inline-block;
         vertical-align: top;
         margin: 0.75em 0 0 0.2em
@@ -276,12 +270,6 @@
         vertical-align: top;
         margin: 3.5em 0 0 1em
     }
-    .error-text {
-        color: red
-    }
-    .submit-button {
-        margin-top: 0.5em;
-    }
     .event-card {
         position: relative;
         flex-grow: 0;
@@ -289,11 +277,10 @@
         border-radius: 25px;
         border: 3px solid #646cff;
         background-color: white;
-        padding: 0em;
-        padding: 0em 1em 0em 1em;
+        padding: 0.75em 1em 0em 1em;
         margin: 1em auto 0;
         width: 30em;
-        height: 10em;
+        min-height: 10em;
         word-wrap: break-word;
         will-change: filter;
         transition: filter 300ms;
@@ -358,12 +345,6 @@
         background-color: rgb(209, 209, 209);
         width: 25em;
         margin-right: auto;
-    }
-    input[type=text] {
-        width: 20em;
-        padding: 8px 14px;
-        margin: 8px 0;
-        box-sizing: border-box;
     }
     .error-chat {
         color: red;

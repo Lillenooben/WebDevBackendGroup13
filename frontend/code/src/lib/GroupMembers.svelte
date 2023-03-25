@@ -147,18 +147,12 @@
 {/await}
 
 <style>
-    .error-text {
-        color: red
-    }
     .invite-form {
         background-color: #b8b8b8;
         width: 30em;
         margin: 1em auto 0 auto;
         border: 2px solid black;
         padding-bottom: 1em;
-    }
-    .submit-button {
-        margin-top: 0.5em;
     }
     .member-wrapper {
         display: flex;
@@ -175,9 +169,6 @@
         margin: 0 0 0.5em 0;
     }
     .avatar {
-        object-fit: cover;
-        border: 3px solid black;
-        border-radius: 50%;
         height: 75px;
         width: 75px;
         align-self: center;
