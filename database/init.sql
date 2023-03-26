@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS userGroupConTable (
     groupID INT,
     isOwner BOOLEAN,
     prevMessageCount INT,
+    UNIQUE (userID, groupID),
     FOREIGN KEY (userID) REFERENCES usersTable(userID) ON DELETE CASCADE,
     FOREIGN KEY (groupID) REFERENCES groupsTable(groupID) ON DELETE CASCADE
 );
