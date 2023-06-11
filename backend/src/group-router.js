@@ -29,11 +29,16 @@ router.post("/create", async function(request, response){
 
     const authResult = mod.authorizeJWT(request)
 
-    if(authResult.succeeded){
+    if (authResult.succeeded) {
 
         const enteredImage = request.body.imageData
         const enteredGroupName = request.body.groupName
         const userID = request.query.userID
+        
+        if (parseInt(authResult.payload.sub) != parseInt(userID)) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
         
         if (enteredGroupName.length < MIN_GROUPNAME_LEN || enteredGroupName.length > MAX_GROUPNAME_LEN) {
             response.status(400).json({error: "Group name must be between " + MIN_GROUPNAME_LEN + " and " + MAX_GROUPNAME_LEN + " characters"})

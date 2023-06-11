@@ -67,6 +67,11 @@ router.get("/groups", async function(request, response){
         const connection = await pool.getConnection()
         const userID = request.query.userID
 
+        if (parseInt(authResult.payload.sub) != parseInt(userID)) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
         try{
             
             const query = `SELECT ugT.groupID, ugT.prevMessageCount, gT.groupName, gT.groupImage, gT.ownerID, gT.memberCount, gT.eventCount, gT.messageCount
@@ -107,6 +112,12 @@ router.get("/get", async function(request, response){
     if (authResult.succeeded) {
 
         const userID = request.query.userID
+
+        if (parseInt(authResult.payload.sub) != parseInt(userID)) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
         const connection = await pool.getConnection()
 
         try{
@@ -139,6 +150,12 @@ router.put("/avatar", async function(request, response){
 
         const enteredImage = request.body.imageData
         const userID = request.query.userID
+
+        if (parseInt(authResult.payload.sub) != parseInt(userID)) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
         const connection = await pool.getConnection()
 
         try{
@@ -179,9 +196,13 @@ router.put("/password", async function(request, response){
             return
         }
 
-        const connection = await pool.getConnection()
         const userID = request.query.userID
-        
+        if (parseInt(authResult.payload.sub) != parseInt(userID)) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
+        const connection = await pool.getConnection()
         try{
             let query = "SELECT userPassword FROM usersTable WHERE userID = ?"
             const oldPassword = await connection.query(query, [userID])
@@ -219,8 +240,13 @@ router.get("/events", async function(request, response){
 
     if (authResult.succeeded) {
 
-        const connection = await pool.getConnection()
         const userID = request.query.userID
+        if (parseInt(authResult.payload.sub) != parseInt(userID)) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
+        const connection = await pool.getConnection()
 
         try{
             const query = `SELECT eventsTable.eventID, eventsTable.groupID, eventsTable.eventTitle, eventsTable.eventDesc, eventsTable.eventDate, groupsTable.groupName
