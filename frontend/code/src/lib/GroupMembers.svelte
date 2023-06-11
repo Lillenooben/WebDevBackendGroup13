@@ -126,12 +126,12 @@
             {#each response.membersArray as member}
 
                 <div class="member-card">
-                    {#if member.profileImage == ""}
+                    {#if member.image == ""}
                         <img class="avatar" src="/userAvatar.png" alt="placeholder avatar"/>
                     {:else}
-                        <img class="avatar" src={member.profileImage} alt="avatar"/>
+                        <img class="avatar" src={member.image} alt="avatar"/>
                     {/if}
-                    <h2>{member.username}</h2>
+                    <h2>{member.name}</h2>
 
                     {#if isOwner && member.userID != $user.userID}
                         <div class="button-wrapper">

@@ -58,8 +58,8 @@
         const body = await response.json()
 
         if (response.status == 200) {
-            groupName = body.group.groupName
-            avatar = body.group.groupImage
+            groupName = body.group.name
+            avatar = body.group.image
         } else {
             error = body.error
         }

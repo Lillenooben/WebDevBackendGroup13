@@ -1,33 +1,15 @@
 import express from 'express'
-import {createPool} from 'mariadb'
-import * as mod from './globalFunctions.js'
-
-const MIN_GROUPNAME_LEN = 3
-const MAX_GROUPNAME_LEN = 20
-const MIN_EVENTNAME_LEN = 3
-const MAX_EVENTNAME_LEN = 20
-const MAX_EVENTDESC_LEN = 150
-const MAX_MESSAGE_LEN = 150
+import {pool} from './db-pool.js'
+import * as globalFunctions from './globalFunctions.js'
+import {MIN_GROUPNAME_LEN, MAX_GROUPNAME_LEN, MIN_EVENTNAME_LEN, MAX_EVENTNAME_LEN, MAX_EVENTDESC_LEN, MAX_MESSAGE_LEN} from './constants.js'
 
 const router = express.Router()
 
 router.use(express.json())
 
-const pool = createPool({
-    host: "database",
-    port: 3306,
-    user: "root",
-    password: "abc123",
-    database: "abc"
-})
-
-pool.on('error', function(error){
-    console.log("Error from pool", error)
-})
-
 router.post("/create", async function(request, response){
 
-    const authResult = mod.authorizeJWT(request)
+    const authResult = globalFunctions.authorizeJWT(request)
 
     if(authResult.succeeded){
 
@@ -42,16 +24,16 @@ router.post("/create", async function(request, response){
 
         const connection = await pool.getConnection()
         try{
-            let query = "INSERT INTO groupsTable (ownerID, groupName, groupImage, memberCount, eventCount, messageCount) VALUES (?, ?, ?, ?, ?, ?)"
-            await connection.query(query, [userID, enteredGroupName, enteredImage, 0, 0, 0])
+            const insertQuery = "INSERT INTO `group` (ownerID, name, image, memberCount, eventCount, messageCount) VALUES (?, ?, ?, ?, ?, ?)"
+            await connection.query(insertQuery, [userID, enteredGroupName, enteredImage, 0, 0, 0])
     
-            query = "SELECT groupID FROM groupsTable ORDER BY groupID DESC LIMIT 1"
+            const selectQuery = "SELECT groupID FROM `group` ORDER BY groupID DESC LIMIT 1"
     
-            const latestInsertedGroup = await connection.query(query)
+            const latestInsertedGroup = await connection.query(selectQuery)
     
             const groupID = latestInsertedGroup[0].groupID
     
-            await mod.createUserGroupConnection(userID, groupID, true)
+            await globalFunctions.createUserGroupConnection(userID, groupID, true)
             response.status(201).json({newGroupID: groupID})
 
         }catch(error){
@@ -69,7 +51,7 @@ router.post("/create", async function(request, response){
 
 router.get("/invites", async function(request, response){
 
-    const authResult = mod.authorizeJWT(request)
+    const authResult = globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
@@ -77,11 +59,7 @@ router.get("/invites", async function(request, response){
         const userID = request.query.userID
 
         try{
-            const query = `SELECT invitationsTable.groupID, groupsTable.groupName 
-                           FROM invitationsTable 
-                           INNER JOIN groupsTable 
-                           ON invitationsTable.groupID=groupsTable.groupID 
-                           WHERE userID = ?`
+            const query = "SELECT invitation.groupID, `group`.name FROM invitation INNER JOIN `group` ON invitation.groupID=`group`.groupID WHERE userID = ?"
             const invites = await connection.query(query, [userID])
             response.status(200).json({invites})
 
@@ -103,7 +81,7 @@ router.get("/invites", async function(request, response){
 
 router.post("/:groupID/invite", async function(request, response){
 
-    const authResult = mod.authorizeJWT(request)
+    const authResult = globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
@@ -112,17 +90,17 @@ router.post("/:groupID/invite", async function(request, response){
 
         try{
             const username = request.body.username
-            let query = "SELECT userID FROM usersTable WHERE username = ?"
-            const resultUser = await connection.query(query, [username])
+            const getIdQuery = "SELECT userID FROM user WHERE name = ?"
+            const resultUser = await connection.query(getIdQuery, [username])
 
-            query = "SELECT COUNT(*) FROM userGroupConTable WHERE userID = ? AND groupID = ?"
-            const resultCount = await connection.query(query, [resultUser[0].userID, groupID])
+            const countQuery = "SELECT COUNT(*) FROM userGroupConnection WHERE userID = ? AND groupID = ?"
+            const resultCount = await connection.query(countQuery, [resultUser[0].userID, groupID])
             
             if (Number(resultCount[0]['COUNT(*)']) > 0) {
                 response.status(400).json({error: "User is already in the group"})
             } else {
-                query = "INSERT INTO invitationsTable (userID, groupID) VALUES (?, ?)"
-                await connection.query(query, [resultUser[0].userID, groupID])
+                const insertQuery = "INSERT INTO invitationsTable (userID, groupID) VALUES (?, ?)"
+                await connection.query(insertQuery, [resultUser[0].userID, groupID])
     
                 response.status(201).end()
             }
@@ -150,7 +128,7 @@ router.post("/:groupID/invite", async function(request, response){
 
 router.post("/:groupID/invite/accept", async function(request, response){
 
-    const authResult = mod.authorizeJWT(request)
+    const authResult = globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
@@ -158,9 +136,9 @@ router.post("/:groupID/invite/accept", async function(request, response){
         const connection = await pool.getConnection()
 
         try{
-            mod.createUserGroupConnection(userID, request.params.groupID, false)
+            globalFunctions.createUserGroupConnection(userID, request.params.groupID, false)
 
-            const query = "DELETE FROM invitationsTable WHERE userID = ? AND groupID = ?"
+            const query = "DELETE FROM invitation WHERE userID = ? AND groupID = ?"
             await connection.query(query, [userID, request.params.groupID])
 
             response.status(201).end()
@@ -177,7 +155,7 @@ router.post("/:groupID/invite/accept", async function(request, response){
 
 router.delete("/:groupID/invite", async function(request, response){
 
-    const authResult = mod.authorizeJWT(request)
+    const authResult = globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
@@ -186,7 +164,7 @@ router.delete("/:groupID/invite", async function(request, response){
 
         try{
             const groupID = parseInt(request.params.groupID)
-            const query = "DELETE FROM invitationsTable WHERE userID = ? AND groupID = ?"
+            const query = "DELETE FROM invitation WHERE userID = ? AND groupID = ?"
             await connection.query(query, [userID, groupID])
             response.status(204).end()
 
@@ -208,7 +186,7 @@ router.delete("/:groupID/invite", async function(request, response){
 
 router.delete("/:groupID/leave", async function(request, response){
 
-    const authResult = mod.authorizeJWT(request)
+    const authResult = globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
@@ -217,7 +195,7 @@ router.delete("/:groupID/leave", async function(request, response){
 
         try{
             const groupID = parseInt(request.params.groupID)
-            const query = "DELETE FROM userGroupConTable WHERE userID = ? AND groupID = ?"
+            const query = "DELETE FROM userGroupConnection WHERE userID = ? AND groupID = ?"
             await connection.query(query, [userID, groupID])
             response.status(204).end()
 
@@ -238,7 +216,7 @@ router.delete("/:groupID/leave", async function(request, response){
 
 router.delete("/:groupID/delete", async function(request, response){
 
-    const authResult = mod.authorizeJWT(request)
+    const authResult = globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
@@ -247,7 +225,7 @@ router.delete("/:groupID/delete", async function(request, response){
 
         try{
             const groupID = parseInt(request.params.groupID)
-            const query = "DELETE FROM groupsTable WHERE groupID = ? AND ownerID = ?"
+            const query = "DELETE FROM `group` WHERE groupID = ? AND ownerID = ?"
             await connection.query(query, [groupID, userID])
             response.status(204).end()
 
@@ -272,7 +250,7 @@ router.delete("/:groupID/delete", async function(request, response){
 
 router.get("/:groupID", async function(request, response){
 
-    const authResult = mod.authorizeJWT(request)
+    const authResult = globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
@@ -281,10 +259,7 @@ router.get("/:groupID", async function(request, response){
         const userID = parseInt(request.query.userID)
 
         try{
-            const query = `SELECT gT.groupID, gT.ownerID, gT.groupName, gT.groupImage, gT.memberCount, gT.eventCount, gT.messageCount
-                           FROM groupsTable AS gT
-                           INNER JOIN userGroupConTable ON userGroupConTable.groupID = gT.groupID
-                           WHERE gT.groupID = ? AND userGroupConTable.userID = ?`
+            const query = "SELECT g.groupID, g.ownerID, g.name, g.image, g.memberCount, g.eventCount, g.messageCount FROM `group` AS g INNER JOIN userGroupConnection ON userGroupConnection.groupID = g.groupID WHERE g.groupID = ? AND userGroupConnection.userID = ?"
             const group = await connection.query(query, [groupID, userID])
 
             if (group.length == 0) {
@@ -319,7 +294,7 @@ router.get("/:groupID", async function(request, response){
 
 router.post("/:groupID/event", async function(request, response){
 
-    const authResult = mod.authorizeJWT(request)
+    const authResult = globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
@@ -345,17 +320,17 @@ router.post("/:groupID/event", async function(request, response){
         const connection = await pool.getConnection()
 
         try{
-            let query = "SELECT groupName FROM groupsTable WHERE groupID = ? AND ownerID = ?"
-            const result = await connection.query(query, [groupID, userID])
+            const selectQuery = "SELECT name FROM `group` WHERE groupID = ? AND ownerID = ?"
+            const result = await connection.query(selectQuery, [groupID, userID])
 
             if (result.length == 0) {
                 throw "ER_SP_FETCH_NO_DATA"
             }
             
-            query = "INSERT INTO eventsTable (groupID, eventTitle, eventDesc, eventDate) VALUES (?,?,?,?)"
-            await connection.query(query, [groupID, eventTitle, eventDesc, eventDate])
+            const insertQuery = "INSERT INTO event (groupID, title, description, date) VALUES (?,?,?,?)"
+            await connection.query(insertQuery, [groupID, eventTitle, eventDesc, eventDate])
 
-            await mod.createUserEventConnections(groupID)
+            await globalFunctions.createUserEventConnections(groupID)
             
             response.status(201).end()
 
@@ -383,7 +358,7 @@ router.post("/:groupID/event", async function(request, response){
 
 router.put("/:groupID/update", async function(request, response){
 
-    const authResult = mod.authorizeJWT(request)
+    const authResult = globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
@@ -395,9 +370,7 @@ router.put("/:groupID/update", async function(request, response){
         const connection = await pool.getConnection()
 
         try{
-            const query = `UPDATE groupsTable
-                           SET groupName = ?, groupImage = ?
-                           WHERE groupID = ? AND ownerID = ?`
+            const query = "UPDATE `group` SET name = ?, image = ? WHERE groupID = ? AND ownerID = ?"
             await connection.query(query, [updatedGroupName, updatedGroupImage, groupID, userID])
             response.status(200).end()
 
@@ -418,7 +391,7 @@ router.put("/:groupID/update", async function(request, response){
 
 router.get("/:groupID/events", async function(request, response){
 
-    const authResult = mod.authorizeJWT(request)
+    const authResult = globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
@@ -426,7 +399,7 @@ router.get("/:groupID/events", async function(request, response){
         const connection = await pool.getConnection()
 
         try{
-            const query = "SELECT * FROM eventsTable WHERE groupID = ? ORDER BY eventDate ASC"
+            const query = "SELECT * FROM event WHERE groupID = ? ORDER BY date ASC"
             const eventsArray = await connection.query(query, [groupID])
             response.status(200).json({eventsArray})
 
@@ -447,7 +420,7 @@ router.get("/:groupID/events", async function(request, response){
 
 router.get("/:groupID/members", async function(request, response){
 
-    const authResult = mod.authorizeJWT(request)
+    const authResult = globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
@@ -455,10 +428,10 @@ router.get("/:groupID/members", async function(request, response){
         const groupID = parseInt(request.params.groupID)
 
         try{
-            const query = `SELECT userGroupConTable.userID, usersTable.username, usersTable.profileImage 
-                           FROM userGroupConTable 
-                           INNER JOIN usersTable ON userGroupConTable.userID = usersTable.userID 
-                           WHERE userGroupConTable.groupID = ?`
+            const query = `SELECT userGroupConnection.userID, user.name, user.image 
+                           FROM userGroupConnection 
+                           INNER JOIN user ON userGroupConnection.userID = user.userID 
+                           WHERE userGroupConnection.groupID = ?`
             const membersArray = await connection.query(query, [groupID])
             response.status(200).json({membersArray})
 
@@ -480,7 +453,7 @@ router.get("/:groupID/members", async function(request, response){
 
 router.get("/:groupID/chat", async function(request, response){
 
-    const authResult = mod.authorizeJWT(request)
+    const authResult = globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
@@ -488,15 +461,15 @@ router.get("/:groupID/chat", async function(request, response){
         const groupID = request.params.groupID
         
         try{
-            let query = `SELECT messagesTable.message, messagesTable.userID, usersTable.username
-                         FROM messagesTable
-                         INNER JOIN usersTable ON messagesTable.userID = usersTable.userID
-                         WHERE groupID = ?
-                         ORDER BY messagesTable.messageID DESC`
-            const messages = await connection.query(query, [groupID])
+            const selectQuery = `SELECT message.body, message.userID, user.name
+                                FROM message
+                                INNER JOIN user ON message.userID = user.userID
+                                WHERE groupID = ?
+                                ORDER BY message.messageID DESC`
+            const messages = await connection.query(selectQuery, [groupID])
 
-            query = "UPDATE userGroupConTable SET prevMessageCount = ? WHERE userID = ? AND groupID = ?"
-            await connection.query(query, [messages.length, request.query.userID, groupID])
+            const updateQuery = "UPDATE userGroupConnection SET readMessageCount = ? WHERE userID = ? AND groupID = ?"
+            await connection.query(updateQuery, [messages.length, request.query.userID, groupID])
 
             response.status(200).json({messages})
 
@@ -517,7 +490,7 @@ router.get("/:groupID/chat", async function(request, response){
 
 router.post("/:groupID/chat", async function(request, response){
 
-    const authResult = mod.authorizeJWT(request)
+    const authResult = globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
@@ -532,7 +505,7 @@ router.post("/:groupID/chat", async function(request, response){
         const connection = await pool.getConnection()
         
         try{
-            const query = "INSERT INTO messagesTable (userID, groupID, message) VALUES (?,?,?)"
+            const query = "INSERT INTO message (userID, groupID, body) VALUES (?,?,?)"
             await connection.query(query, [userID, request.params.groupID, chatMessage])
             response.status(201).end()
 
@@ -554,7 +527,7 @@ router.post("/:groupID/chat", async function(request, response){
 
 router.delete("/:groupID/member", async function(request, response){
 
-    const authResult = mod.authorizeJWT(request)
+    const authResult = globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
@@ -568,12 +541,12 @@ router.delete("/:groupID/member", async function(request, response){
         }
 
         try{
-            let query = "SELECT * FROM groupsTable WHERE groupID = ? AND ownerID = ?"
-            const result = await connection.query(query, [groupID, requestUserID])
+            const selectQuery = "SELECT * FROM `group` WHERE groupID = ? AND ownerID = ?"
+            const result = await connection.query(selectQuery, [groupID, requestUserID])
 
             if (result.length > 0) {
-                query = "DELETE FROM userGroupConTable WHERE groupID = ? AND userID = ?"
-                await connection.query(query, [groupID, deleteUserID])
+                const deleteQuery = "DELETE FROM userGroupConnection WHERE groupID = ? AND userID = ?"
+                await connection.query(deleteQuery, [groupID, deleteUserID])
                 response.status(204).end()
 
             } else {
@@ -599,4 +572,4 @@ router.delete("/:groupID/member", async function(request, response){
     }
 })
 
-export {router}
+export {router as groupRouter}

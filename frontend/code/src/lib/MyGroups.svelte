@@ -68,7 +68,7 @@
                 {:else}
                     {#each response.invites as invite}
                         <div class="dropdown-row">
-                            {invite.groupName}
+                            {invite.name}
                             <button on:click={() => acceptInvitation(invite.groupID)} class="accept-button">&#10004;</button>
                             <button on:click={() => rejectInvitation(invite.groupID)} class="reject-button">X</button>
                         </div>
@@ -99,13 +99,13 @@
 
                         <button class="group-card" on:click={() => navigate(`/group/${group.groupID}`)}>
                             
-                            {#if group.groupImage == ""}
+                            {#if group.image == ""}
                                 <img class="avatar" src="/groupAvatar.png" alt="placeholder avatar"/>
                             {:else}
-                                <img class="avatar" src={group.groupImage} alt="avatar"/>
+                                <img class="avatar" src={group.image} alt="avatar"/>
                             {/if}
 
-                            <h2 class="group-name">{group.groupName}</h2>
+                            <h2 class="group-name">{group.name}</h2>
                             <div class="icon-wrapper">
                                 <h2>
                                     <img class="small-icon" src="/person_icon.png" alt="person icon">{group.memberCount} 
@@ -113,9 +113,9 @@
                                 </h2>
                             </div>
 
-                            {#if group.messageCount-group.prevMessageCount > 0}
+                            {#if group.messageCount-group.readMessageCount > 0}
                                 <div class="notification-number">
-                                    <h2>{group.messageCount-group.prevMessageCount}</h2>
+                                    <h2>{group.messageCount-group.readMessageCount}</h2>
                                 </div>
                             {/if}
 

@@ -1,33 +1,11 @@
-import {createPool} from 'mariadb'
-import bcrypt, { hash } from 'bcrypt'
-import {ACCESS_TOKEN_SECRET} from './app.js'
+import {pool} from './db-pool.js'
+import bcrypt from 'bcrypt'
+import {ACCESS_TOKEN_SECRET, SALT} from './constants.js'
 import jwt from 'jsonwebtoken'
-
-const salt = "$2b$10$JuPOH8SVXG6GG7BDU92clu"
-
-const pool = createPool({
-    host: "database",
-    port: 3306,
-    user: "root",
-    password: "abc123",
-    database: "abc"
-})
-
-pool.on('error', function(error){
-    console.log("Error from pool", error)
-})
-
-export function getParsedIDs(objectArray){
-    let IDs = []
-    objectArray.forEach(element => {
-        IDs.push(Object.values(element)[0])
-    });
-    return IDs
-}
 
 export async function hashPassword(password){
     return new Promise((resolve, reject) => {
-        bcrypt.hash(password, salt, (err, hash) => {
+        bcrypt.hash(password, SALT, (err, hash) => {
           if (err) {
             reject(err);
           } else {
@@ -75,7 +53,7 @@ export async function addUser(username, password){
 
     try{
         const hashedPassword = await hashPassword(password)
-        const query = "INSERT INTO usersTable (username, userPassword, profileImage) VALUES (?,?,?)"
+        const query = "INSERT INTO user (name, password, image) VALUES (?,?,?)"
         await connection.query(query, [username, hashedPassword, ""])
         didSucceed = true
     }catch(error){
@@ -92,17 +70,16 @@ export async function createUserEventConnections(groupID){
 
     const connection = await pool.getConnection()
     try{
-        let query = "SELECT userID FROM userGroupConTable WHERE groupID = ?"
-        const usersInGroup = await connection.query(query, [groupID])
-        const userIDsArray = getParsedIDs(usersInGroup)
+        const selectUsersQuery = "SELECT userID FROM userGroupConnection WHERE groupID = ?"
+        const usersInGroup = await connection.query(selectUsersQuery, [groupID])
 
-        query = "SELECT eventID FROM eventsTable WHERE groupID = ? ORDER BY eventID DESC"
-        const eventIDsFromGroupID = await connection.query(query, [groupID])
+        const selectEventsQuery = "SELECT eventID FROM event WHERE groupID = ? ORDER BY eventID DESC"
+        const eventIDsFromGroupID = await connection.query(selectEventsQuery, [groupID])
         const eventIDFromLatestEvent = eventIDsFromGroupID[0].eventID
 
-        query = "INSERT INTO userEventConTable (userID, eventID) VALUES (?,?)"
-        for (let userID of userIDsArray){
-            await connection.query(query, [userID, eventIDFromLatestEvent])
+        const insertQuery = "INSERT INTO userEventConnection (userID, eventID) VALUES (?,?)"
+        for (let user of usersInGroup){
+            await connection.query(insertQuery, [user.userID, eventIDFromLatestEvent])
         }
 
     }catch(error){
@@ -118,7 +95,7 @@ export async function createUserEventConnections(groupID){
 export async function createUserGroupConnection(userID, groupID, isOwner){
     const connection = await pool.getConnection()
     try{
-        const query = "INSERT INTO userGroupConTable (userID, groupID, isOwner, prevMessageCount) VALUES (?,?,?,?)"
+        const query = "INSERT INTO userGroupConnection (userID, groupID, isOwner, readMessageCount) VALUES (?,?,?,?)"
         await connection.query(query, [userID, groupID, isOwner, 0])
     }catch(error){
         console.log(error)
@@ -134,18 +111,17 @@ export async function compareLoginCredentials(username, password){
     const connection = await pool.getConnection()
 
     try {
-        const query = "SELECT * FROM usersTable WHERE username = ?"
+        const query = "SELECT * FROM user WHERE name = ?"
         const user = await connection.query(query, [username])
 
-        const hashedPassword = user[0].userPassword
-        
+        const hashedPassword = user[0].password
         return {
-            success: bcrypt.compareSync(password, hashedPassword),
+            didSucceed: bcrypt.compareSync(password, hashedPassword),
             user: user[0]
         }
 
     }catch(error){
-        return {success: false}
+        return {didSucceed: false}
     }finally{
         if (connection) {
             connection.release()

@@ -124,15 +124,15 @@
 
     {#await response.json() then response}
     
-        <h1>{response.username}</h1>
+        <h1>{response.name}</h1>
 
         <div>
             {#if avatar}
                 <img class="avatar" src={avatar} alt="uploaded avatar"/>
-            {:else if response.profileImage == ""}
+            {:else if response.image == ""}
                 <img class="avatar" src="/userAvatar.png" alt="placeholder avatar"/>
             {:else}
-            <img src={response.profileImage} class="avatar" alt="user Avatar">
+            <img src={response.image} class="avatar" alt="user Avatar">
             {/if}
         </div>
 

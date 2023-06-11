@@ -56,9 +56,9 @@
         const body = await response.json()
 
         if (response.status == 200) {
-            eventTitle = body.event.eventTitle
-            eventDesc = body.event.eventDesc
-            eventDate = body.event.eventDate.split('.')[0]
+            eventTitle = body.event.title
+            eventDesc = body.event.description
+            eventDate = body.event.date.split('.')[0]
             groupID = body.event.groupID
         } else {
             error = body.error
