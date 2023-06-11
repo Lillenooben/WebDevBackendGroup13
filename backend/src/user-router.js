@@ -26,7 +26,7 @@ pool.on('error', function(error){
 router.post("/create", async function(request, response){
     const body = request.body
 
-    let errors = []
+    const errors = []
 
     if (body.username.length < MIN_USERNAME_LEN || body.username.length > MAX_USERNAME_LEN) {
         errors.push("Username must be between " + MIN_USERNAME_LEN + " and " + MAX_USERNAME_LEN + " characters")
@@ -46,11 +46,12 @@ router.post("/create", async function(request, response){
     }
 
     try {
-        if(await mod.addUser(body.username, body.password)){
+        const addingUserResult = await mod.addUser(body.username, body.password)
+        if(addingUserResult.didSucceed){
             response.status(201).end()
         }
         else{
-            response.status(400).json({errors: ["That username is already taken"]})
+            response.status(400).json({errors: [addingUserResult.errorMessage]})
         }
     } catch(error) {
         response.status(500).end("Internal Server Error")
@@ -136,10 +137,14 @@ router.put("/avatar", async function(request, response){
     const authResult = mod.authorizeJWT(request)
 
     if (authResult.succeeded) {
-
         const enteredImage = request.body.imageData
         const userID = request.query.userID
         const connection = await pool.getConnection()
+
+        if (parseInt(authResult.payload.sub) != parseInt(userID)) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
 
         try{
             const query = "UPDATE usersTable SET profileImage = ? WHERE userID = ?"
@@ -181,6 +186,11 @@ router.put("/password", async function(request, response){
 
         const connection = await pool.getConnection()
         const userID = request.query.userID
+
+        if (parseInt(authResult.payload.sub) != parseInt(userID)) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
         
         try{
             let query = "SELECT userPassword FROM usersTable WHERE userID = ?"
@@ -222,6 +232,11 @@ router.get("/events", async function(request, response){
         const connection = await pool.getConnection()
         const userID = request.query.userID
 
+        if (parseInt(authResult.payload.sub) != parseInt(userID)) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
         try{
             const query = `SELECT eventsTable.eventID, eventsTable.groupID, eventsTable.eventTitle, eventsTable.eventDesc, eventsTable.eventDate, groupsTable.groupName
                            FROM eventsTable
@@ -249,4 +264,4 @@ router.get("/events", async function(request, response){
     
 })
 
-export {router}
+export { router }

@@ -43,7 +43,7 @@
             })
 
             const body = await response.json()
-
+            
             switch(response.status) {
                 case 201:
                     navigate(`group/${body.newGroupID}`)
@@ -60,6 +60,7 @@
             }
 
         }catch(error){
+            alert('An error occured while creating group:\n' + error + '\nPlease Try again later')
             console.log(error)
         }
 
