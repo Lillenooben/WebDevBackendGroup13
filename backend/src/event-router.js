@@ -8,13 +8,20 @@ router.use(express.json())
 
 router.get("/:eventID", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
         const eventID = parseInt(request.params.eventID)
-        const connection = await pool.getConnection()
 
+        const groupID = globalFunctions.getGroupIDFromEventID(eventID)
+
+        if (!globalFunctions.isUserInGroup(parseInt(authResult.payload.sub), groupID)) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
+        const connection = await pool.getConnection()
         try{
             const query = "SELECT * FROM event WHERE eventID = ?"
             const event = await connection.query(query, [eventID])
@@ -37,7 +44,7 @@ router.get("/:eventID", async function(request, response){
 
 router.put("/:eventID/update", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
@@ -45,9 +52,22 @@ router.put("/:eventID/update", async function(request, response){
         const updatedEventTitle = request.body.title
         const updatedEventDesc = request.body.description
         const updatedEventDate = request.body.date
-        const connection = await pool.getConnection()
 
+        const ownerIDResult = await globalFunctions.getOwnerIDFromEventID(eventID)
+        
+        if ( ownerIDResult.error ) {
+            response.status(500).json({error: "Internal Server Error"})
+            return
+        }
+
+        if ( parseInt(authResult.payload.sub) != parseInt(ownerIDResult.ownerID) ) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+        
+        const connection = await pool.getConnection()
         try{
+            
             const query = `UPDATE event
                            SET title = ?, description = ?, date = ?
                            WHERE eventID = ?`
@@ -71,13 +91,25 @@ router.put("/:eventID/update", async function(request, response){
 
 router.delete("/:eventID/delete", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
         const eventID = parseInt(request.params.eventID)
-        const connection = await pool.getConnection()
 
+        const ownerIDResult = await globalFunctions.getOwnerIDFromEventID(eventID)
+
+        if ( ownerIDResult.error ) {
+            response.status(500).json({error: "Internal Server Error"})
+            return
+        }
+
+        if ( parseInt(authResult.payload.sub) != parseInt(ownerIDResult.ownerID) ) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
+        const connection = await pool.getConnection()
         try{
             const query = "DELETE FROM event WHERE eventID = ?"
             await connection.query(query, [eventID])

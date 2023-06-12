@@ -4,7 +4,7 @@
     import { user } from "../user-store.js"
     import { navigate } from "svelte-routing"
 
-    let eventID = window.location.pathname.split("/").pop()
+    export let eventID
     let groupID = ""
 
     let eventTitle = ""

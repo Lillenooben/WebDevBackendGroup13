@@ -26,7 +26,7 @@
         switch (response.status) {
             case 500:
                 loading = false
-                error = "Something went wrong"
+                error = body.error
                 break
             case 400:
                 loading = false

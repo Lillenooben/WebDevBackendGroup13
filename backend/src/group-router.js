@@ -9,13 +9,18 @@ router.use(express.json())
 
 router.post("/create", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if(authResult.succeeded){
 
         const enteredImage = request.body.imageData
         const enteredGroupName = request.body.groupName
         const userID = request.query.userID
+        
+        if ( parseInt(authResult.payload.sub) != parseInt(userID) ) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
         
         if (enteredGroupName.length < MIN_GROUPNAME_LEN || enteredGroupName.length > MAX_GROUPNAME_LEN) {
             response.status(400).json({error: "Group name must be between " + MIN_GROUPNAME_LEN + " and " + MAX_GROUPNAME_LEN + " characters"})
@@ -51,13 +56,13 @@ router.post("/create", async function(request, response){
 
 router.get("/invites", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
-        const connection = await pool.getConnection()
         const userID = request.query.userID
 
+        const connection = await pool.getConnection()
         try{
             const query = "SELECT invitation.groupID, `group`.name FROM invitation INNER JOIN `group` ON invitation.groupID=`group`.groupID WHERE userID = ?"
             const invites = await connection.query(query, [userID])
@@ -81,13 +86,25 @@ router.get("/invites", async function(request, response){
 
 router.post("/:groupID/invite", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
-        const connection = await pool.getConnection()
+        
         const groupID = parseInt(request.params.groupID)
+        const queryResult = await globalFunctions.getOwnerIDfromGroupID(groupID)
 
+        if ( queryResult.error ) {
+            response.status(500).json({error: "Internal Server Error"})
+            return
+        }
+
+        if ( parseInt(authResult.payload.sub) != parseInt(queryResult.ownerID) ) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
+        const connection = await pool.getConnection()
         try{
             const username = request.body.username
             const getIdQuery = "SELECT userID FROM user WHERE name = ?"
@@ -128,13 +145,18 @@ router.post("/:groupID/invite", async function(request, response){
 
 router.post("/:groupID/invite/accept", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
         const userID = request.query.userID
-        const connection = await pool.getConnection()
 
+        if ( parseInt(authResult.payload.sub) != parseInt(userID) ) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
+        const connection = await pool.getConnection()
         try{
             globalFunctions.createUserGroupConnection(userID, request.params.groupID, false)
 
@@ -155,13 +177,18 @@ router.post("/:groupID/invite/accept", async function(request, response){
 
 router.delete("/:groupID/invite", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
-        const connection = await pool.getConnection()
         const userID = request.query.userID
 
+        if ( parseInt(authResult.payload.sub) != parseInt(userID) ) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+        
+        const connection = await pool.getConnection()
         try{
             const groupID = parseInt(request.params.groupID)
             const query = "DELETE FROM invitation WHERE userID = ? AND groupID = ?"
@@ -186,13 +213,18 @@ router.delete("/:groupID/invite", async function(request, response){
 
 router.delete("/:groupID/leave", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
-        const connection = await pool.getConnection()
         const userID = request.query.userID
 
+        if ( parseInt(authResult.payload.sub) != parseInt(userID) ) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
+        const connection = await pool.getConnection()
         try{
             const groupID = parseInt(request.params.groupID)
             const query = "DELETE FROM userGroupConnection WHERE userID = ? AND groupID = ?"
@@ -216,13 +248,18 @@ router.delete("/:groupID/leave", async function(request, response){
 
 router.delete("/:groupID/delete", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
-        const connection = await pool.getConnection()
         const userID = request.query.userID
 
+        if ( parseInt(authResult.payload.sub) != parseInt(userID) ) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
+        const connection = await pool.getConnection()
         try{
             const groupID = parseInt(request.params.groupID)
             const query = "DELETE FROM `group` WHERE groupID = ? AND ownerID = ?"
@@ -250,20 +287,27 @@ router.delete("/:groupID/delete", async function(request, response){
 
 router.get("/:groupID", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
-        const connection = await pool.getConnection()
+        
         const groupID = parseInt(request.params.groupID)
         const userID = parseInt(request.query.userID)
 
+        if (!globalFunctions.isUserInGroup(parseInt(authResult.payload.sub), groupID)) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
+        const connection = await pool.getConnection()
         try{
             const query = "SELECT g.groupID, g.ownerID, g.name, g.image, g.memberCount, g.eventCount, g.messageCount FROM `group` AS g INNER JOIN userGroupConnection ON userGroupConnection.groupID = g.groupID WHERE g.groupID = ? AND userGroupConnection.userID = ?"
             const group = await connection.query(query, [groupID, userID])
 
             if (group.length == 0) {
-                throw "ER_SP_FETCH_NO_DATA"
+                response.status(404).json({error: "Group not found"})
+                return
             }
 
             let isOwner = false
@@ -275,11 +319,7 @@ router.get("/:groupID", async function(request, response){
 
         }catch(error){
             console.log(error)
-            if (error == "ER_SP_FETCH_NO_DATA") {
-                response.status(404).json({error: "Group not found"})
-            } else {
-                response.status(500).json({error: "Internal Server Error"})
-            }
+            response.status(500).json({error: "Internal Server Error"})
 
         }finally{
             if (connection) {
@@ -294,7 +334,7 @@ router.get("/:groupID", async function(request, response){
 
 router.post("/:groupID/event", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
@@ -304,6 +344,18 @@ router.post("/:groupID/event", async function(request, response){
         const eventDesc = request.body.description
         const eventDate = request.body.date
         const currentDate = new Date()
+
+        const queryResult = await globalFunctions.getOwnerIDfromGroupID(groupID)
+
+        if ( queryResult.error ) {
+            response.status(500).json({error: "Internal Server Error"})
+            return
+        }
+
+        if ( parseInt(authResult.payload.sub) != parseInt(queryResult.ownerID) ) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
 
         if (eventTitle.length < MIN_EVENTNAME_LEN || eventTitle.length > MAX_EVENTNAME_LEN) {
             response.status(400).json({error: `Title must be between ${MIN_EVENTNAME_LEN} and ${MAX_EVENTNAME_LEN} characters`})
@@ -318,13 +370,13 @@ router.post("/:groupID/event", async function(request, response){
         }
 
         const connection = await pool.getConnection()
-
         try{
-            const selectQuery = "SELECT name FROM `group` WHERE groupID = ? AND ownerID = ?"
+            const selectQuery = "SELECT * FROM `group` WHERE groupID = ? AND ownerID = ?"
             const result = await connection.query(selectQuery, [groupID, userID])
 
             if (result.length == 0) {
-                throw "ER_SP_FETCH_NO_DATA"
+                response.status(404).json({error: "Group not found"})
+                return
             }
             
             const insertQuery = "INSERT INTO event (groupID, title, description, date) VALUES (?,?,?,?)"
@@ -336,12 +388,7 @@ router.post("/:groupID/event", async function(request, response){
 
         }catch(error){
             console.log(error)
-            if (error == "ER_SP_FETCH_NO_DATA") {
-                response.status(404).json({error: "Group not found"})
-            } else {
-                response.status(500).end("Internal Server Error")
-            }
-            
+            response.status(500).end("Internal Server Error")
 
         }finally{
             if (connection) {
@@ -358,7 +405,7 @@ router.post("/:groupID/event", async function(request, response){
 
 router.put("/:groupID/update", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
@@ -366,9 +413,20 @@ router.put("/:groupID/update", async function(request, response){
         const userID = request.query.userID
         const updatedGroupName = request.body.groupName
         const updatedGroupImage = request.body.imageData
+
+        const queryResult = await globalFunctions.getOwnerIDfromGroupID(groupID)
+
+        if ( queryResult.error ) {
+            response.status(500).json({error: "Internal Server Error"})
+            return
+        }
+
+        if ( parseInt(authResult.payload.sub) != parseInt(queryResult.ownerID) ) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
         
         const connection = await pool.getConnection()
-
         try{
             const query = "UPDATE `group` SET name = ?, image = ? WHERE groupID = ? AND ownerID = ?"
             await connection.query(query, [updatedGroupName, updatedGroupImage, groupID, userID])
@@ -391,13 +449,18 @@ router.put("/:groupID/update", async function(request, response){
 
 router.get("/:groupID/events", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
         const groupID = parseInt(request.params.groupID)
-        const connection = await pool.getConnection()
 
+        if (!globalFunctions.isUserInGroup(parseInt(authResult.payload.sub), groupID)) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
+        const connection = await pool.getConnection()
         try{
             const query = "SELECT * FROM event WHERE groupID = ? ORDER BY date ASC"
             const eventsArray = await connection.query(query, [groupID])
@@ -420,13 +483,18 @@ router.get("/:groupID/events", async function(request, response){
 
 router.get("/:groupID/members", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
-        const connection = await pool.getConnection()
         const groupID = parseInt(request.params.groupID)
 
+        if (!globalFunctions.isUserInGroup(parseInt(authResult.payload.sub), groupID)) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
+        const connection = await pool.getConnection()
         try{
             const query = `SELECT userGroupConnection.userID, user.name, user.image 
                            FROM userGroupConnection 
@@ -453,13 +521,18 @@ router.get("/:groupID/members", async function(request, response){
 
 router.get("/:groupID/chat", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
-        const connection = await pool.getConnection()
         const groupID = request.params.groupID
-        
+
+        if (!globalFunctions.isUserInGroup(parseInt(authResult.payload.sub), groupID)) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
+        const connection = await pool.getConnection()
         try{
             const selectQuery = `SELECT message.body, message.userID, user.name
                                 FROM message
@@ -490,12 +563,18 @@ router.get("/:groupID/chat", async function(request, response){
 
 router.post("/:groupID/chat", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
         const chatMessage = request.body.message
+        const groupID = request.params.groupID
         const userID = request.query.userID
+        
+        if (!globalFunctions.isUserInGroup(parseInt(authResult.payload.sub), groupID)) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
 
         if (chatMessage.length > MAX_MESSAGE_LEN) {
             response.status(400).json({error: `Message may not exceed ${MAX_MESSAGE_LEN} characters`})
@@ -503,10 +582,9 @@ router.post("/:groupID/chat", async function(request, response){
         }
 
         const connection = await pool.getConnection()
-        
         try{
             const query = "INSERT INTO message (userID, groupID, body) VALUES (?,?,?)"
-            await connection.query(query, [userID, request.params.groupID, chatMessage])
+            await connection.query(query, [userID, groupID, chatMessage])
             response.status(201).end()
 
         }catch(error){
@@ -527,12 +605,25 @@ router.post("/:groupID/chat", async function(request, response){
 
 router.delete("/:groupID/member", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
-        const connection = await pool.getConnection()
-        const groupID = request.params.groupID
+        
+        const groupID = parseInt(request.params.groupID)
+
+        const queryResult = await globalFunctions.getOwnerIDfromGroupID(groupID)
+
+        if ( queryResult.error ) {
+            response.status(500).json({error: "Internal Server Error"})
+            return
+        }
+
+        if ( parseInt(authResult.payload.sub) != parseInt(queryResult.ownerID) ) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
         const deleteUserID = request.query.deleteUserID
         const requestUserID = request.query.requestUserID
 
@@ -540,6 +631,7 @@ router.delete("/:groupID/member", async function(request, response){
             response.status(400).json({error: "Cannot uninvite yourself from group."})
         }
 
+        const connection = await pool.getConnection()
         try{
             const selectQuery = "SELECT * FROM `group` WHERE groupID = ? AND ownerID = ?"
             const result = await connection.query(selectQuery, [groupID, requestUserID])

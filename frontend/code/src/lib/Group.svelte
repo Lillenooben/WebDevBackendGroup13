@@ -4,7 +4,7 @@
     import Loader from "./Loader.svelte"
     import { onDestroy, onMount } from "svelte"
 
-    const groupID = window.location.pathname.split("/").pop()
+    export let groupID
 
     let deleteErrorGroup = ""
     let deleteErrorEvent = ""

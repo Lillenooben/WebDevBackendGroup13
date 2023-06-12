@@ -3,7 +3,7 @@
     import { user } from "../user-store.js"
     import { navigate } from "svelte-routing";
 
-    const groupID = window.location.pathname.split("/").pop()
+    export let groupID
     let loading = false
     let eventTitle = ""
     let eventDesc = ""

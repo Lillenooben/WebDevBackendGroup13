@@ -10,7 +10,7 @@ router.use(express.json())
 router.post("/create", async function(request, response){
     const body = request.body
 
-    let errors = []
+    const errors = []
 
     if (body.username.length < MIN_USERNAME_LEN || body.username.length > MAX_USERNAME_LEN) {
         errors.push("Username must be between " + MIN_USERNAME_LEN + " and " + MAX_USERNAME_LEN + " characters")
@@ -30,11 +30,14 @@ router.post("/create", async function(request, response){
     }
 
     try {
-        if(await globalFunctions.addUser(body.username, body.password)){
+        const addUserResult = await globalFunctions.addUser(body.username, body.password)
+
+        if(addUserResult.didSucceed){
             response.status(201).end()
         }
         else{
-            response.status(400).json({errors: ["That username is already taken"]})
+            errors.push(addUserResult.errorMessage)
+            response.status(400).json({errors: errors})
         }
     } catch(error) {
         response.status(500).end("Internal Server Error")
@@ -44,15 +47,19 @@ router.post("/create", async function(request, response){
 
 router.get("/groups", async function(request, response){
     
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
         
-        const connection = await pool.getConnection()
         const userID = request.query.userID
 
+        if ( parseInt(authResult.payload.sub) != parseInt(userID) ) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
+        const connection = await pool.getConnection()
         try{
-            
             const query = "SELECT ugc.groupID, ugc.readMessageCount, g.name, g.image, g.ownerID, g.memberCount, g.eventCount, g.messageCount FROM userGroupConnection AS ugc INNER JOIN `group` AS g ON ugc.groupID = g.groupID WHERE userID = ?"
             const groupsArray = await connection.query(query, [userID])
 
@@ -82,13 +89,18 @@ router.get("/groups", async function(request, response){
 
 router.get("/get", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
         const userID = request.query.userID
-        const connection = await pool.getConnection()
 
+        if ( parseInt(authResult.payload.sub) != parseInt(userID) ) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
+        const connection = await pool.getConnection()
         try{
             const query = "SELECT * FROM user WHERE userID = ?"
             const usersArray = await connection.query(query, [userID])
@@ -113,14 +125,19 @@ router.get("/get", async function(request, response){
 
 router.put("/avatar", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
         const enteredImage = request.body.imageData
         const userID = request.query.userID
-        const connection = await pool.getConnection()
 
+        if ( parseInt(authResult.payload.sub) != parseInt(userID) ) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
+        const connection = await pool.getConnection()
         try{
             const query = "UPDATE user SET image = ? WHERE userID = ?"
             await connection.query(query, [enteredImage, userID])
@@ -143,7 +160,7 @@ router.put("/avatar", async function(request, response){
 
 router.put("/password", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
@@ -159,9 +176,14 @@ router.put("/password", async function(request, response){
             return
         }
 
-        const connection = await pool.getConnection()
         const userID = request.query.userID
-        
+
+        if ( parseInt(authResult.payload.sub) != parseInt(userID) ) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
+        const connection = await pool.getConnection()
         try{
             const selectQuery = "SELECT password FROM user WHERE userID = ?"
             const oldPassword = await connection.query(selectQuery, [userID])
@@ -195,13 +217,18 @@ router.put("/password", async function(request, response){
 
 router.get("/events", async function(request, response){
 
-    const authResult = globalFunctions.authorizeJWT(request)
+    const authResult = await globalFunctions.authorizeJWT(request)
 
     if (authResult.succeeded) {
 
-        const connection = await pool.getConnection()
         const userID = request.query.userID
 
+        if ( parseInt(authResult.payload.sub) != parseInt(userID) ) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+        
+        const connection = await pool.getConnection()
         try{
             const query = "SELECT event.eventID, event.groupID, event.title, event.description, event.date, g.name FROM event INNER JOIN `group` AS g ON event.groupID = g.groupID INNER JOIN userGroupConnection ON g.groupID = userGroupConnection.groupID WHERE userGroupConnection.userID = ? ORDER BY event.date ASC"
             const eventsArray = await connection.query(query, [userID])
@@ -222,6 +249,36 @@ router.get("/events", async function(request, response){
         response.status(401).json({error: "Access unauthorized"})
     }
     
+})
+
+router.delete("/delete", async function(request, response){
+
+    const authResult = await globalFunctions.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        const userID = request.query.userID
+        if ( parseInt(authResult.payload.sub) != parseInt(userID) ) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
+        const connection = await pool.getConnection()
+        try{
+            const query = "DELETE FROM user WHERE userID = ?"
+            await connection.query(query, [userID])
+
+            response.status(204).end()
+
+        }catch(error){
+            console.log(error)
+            response.status(500).json({error: "Internal Server Error"})
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
+    }
+
 })
 
 export {router as userRouter}

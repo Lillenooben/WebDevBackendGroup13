@@ -15,40 +15,37 @@ export async function hashPassword(password){
     });
 }
 
-export function authorizeJWT(request){
-    let result = {}
-
-    try{
-        const authorizationHeaderValue = request.get("Authorization")
-        const accessToken = authorizationHeaderValue.substring(7)
-
-        jwt.verify(accessToken, ACCESS_TOKEN_SECRET, function(error, payload){
-            if(error){
-                result = {
-                    succeeded: false,
-                    error: error
+export function authorizeJWT(request) {
+    return new Promise((resolve, reject) => {
+        try {
+            const authorizationHeaderValue = request.get("Authorization")
+            const accessToken = authorizationHeaderValue.substring(7)
+  
+            jwt.verify(accessToken, ACCESS_TOKEN_SECRET, function (error, payload) {
+                if (error) {
+                    reject({
+                        succeeded: false,
+                        error: error,
+                    })
+                } else {
+                    resolve({
+                        succeeded: true,
+                        payload: payload,
+                    })
                 }
-            }else{
-                result = {
-                    succeeded: true,
-                    payload: payload,
-                }
-                
-            }
-        })
-
-    }catch(error){
-        result = {
-            succeeded: false,
-            error: error
+            })
+        } catch (error) {
+            reject({
+                succeeded: false,
+                error: error,
+            })
         }
-    }finally{
-        return result
-    }
+    })
 }
 
 export async function addUser(username, password){
     let didSucceed = false
+    let errorMessage = ""
     const connection = await pool.getConnection()
 
     try{
@@ -56,13 +53,18 @@ export async function addUser(username, password){
         const query = "INSERT INTO user (name, password, image) VALUES (?,?,?)"
         await connection.query(query, [username, hashedPassword, ""])
         didSucceed = true
-    }catch(error){
+    } catch(error) {
         console.log(error)
+        if (error.code == "ER_DUP_ENTRY") {
+            errorMessage = "Username already taken"
+        } else {
+            errorMessage = "Internal Server Error"
+        }
     } finally {
         if (connection) {
             connection.release()
         }
-        return didSucceed
+        return {didSucceed: didSucceed, errorMessage: errorMessage}
     }
 }
 
@@ -107,25 +109,120 @@ export async function createUserGroupConnection(userID, groupID, isOwner){
 }
 
 export async function compareLoginCredentials(username, password){
-    
+
     const connection = await pool.getConnection()
-
     try {
+        
         const query = "SELECT * FROM user WHERE name = ?"
-        const user = await connection.query(query, [username])
+        const users = await connection.query(query, [username])
 
-        const hashedPassword = user[0].password
+        const hashedPassword = users[0].password
         return {
-            didSucceed: bcrypt.compareSync(password, hashedPassword),
-            user: user[0]
+            didSucceed: await bcrypt.compare(password, hashedPassword),
+            user: users[0]
         }
 
-    }catch(error){
+    } catch(error) {
+        console.log(error)
         return {didSucceed: false}
     }finally{
+        connection.release()
+    }
+
+}
+
+export async function getOwnerIDfromGroupID(groupID) {
+    const connection = await pool.getConnection()
+    try {
+        const query = "SELECT ownerID FROM `group` WHERE groupID = ?"
+        const resultedRow = await connection.query(query, [groupID])
+        
+        return {
+            ownerID: resultedRow[0].ownerID
+        }
+    } catch(error) {
+        console.log(error)
+        return {
+            error: error
+        }
+    } finally {
         if (connection) {
             connection.release()
         }
     }
+}
 
+export async function isUserInGroup(userID, groupID) {
+    const connection = await pool.getConnection()
+    try {
+        
+        const query = "SELECT * FROM userGroupConnection WHERE userID = ? AND groupID = ?"
+        const result = await connection.query(query, [userID, groupID])
+
+        if (result.length > 0) {
+            return {
+                isInGroup: true
+            }
+        } else {
+            return {
+                isInGroup: false
+            }
+        }
+    } catch(error) {
+        console.log(error)
+        return {
+            error: error
+        }
+    } finally {
+        if (connection) {
+            connection.release()
+        }
+    }
+}
+
+export async function getGroupIDFromEventID(eventID) {
+    const connection = await pool.getConnection()
+    try {
+        
+        const query = "SELECT groupID FROM event WHERE eventID = ?"
+        const resultedRow = await connection.query(query, [eventID])
+        
+        if (resultedRow.length > 0) {
+            return {
+                groupID: resultedRow[0].groupID
+            }
+        }
+    } catch(error) {
+        console.log(error)
+        return {
+            error: error
+        }
+    } finally {
+        if (connection) {
+            connection.release()
+        }
+    }
+}
+
+export async function getOwnerIDFromEventID(eventID) {
+    const connection = await pool.getConnection()
+    try {
+        const query = "SELECT g.ownerID FROM `group` AS g INNER JOIN event AS e ON g.groupID = e.groupID WHERE e.eventID = ?"
+        const resultedRow = await connection.query(query, [eventID])
+        
+        if (resultedRow.length > 0) {
+            return {
+                ownerID: resultedRow[0].ownerID
+            }
+        }
+    } catch(error) {
+        console.log(error)
+        return {
+            error: error
+        }
+    } finally {
+        if (connection) {
+            connection.release()
+        }
+    }
 }

@@ -23,6 +23,8 @@
     let newPassword = ""
     let confPassword = ""
 
+    let deleteError = ""
+
     let fileInput
     let files
     let avatar
@@ -114,6 +116,28 @@
         }
         navigate("/login")
     }
+
+    async function deleteAccount() {
+
+        if (!confirm("Are you sure you wish to delete your account? \nThis cannot be undone!")) {
+            return
+        }
+
+        const response = await fetch("http://localhost:8080/user/delete?userID=" + $user.userID, {
+            method: "DELETE",
+            headers: {
+                "Authorization": "Bearer "+$user.accessToken,
+            },
+        })
+
+        if (response.status == 204) {
+            logout()
+
+        } else {
+            const body = await response.json()
+            deleteError = body.error
+        }
+    }
 </script>
 
 {#await fetchUserPromise}
@@ -182,6 +206,12 @@
         <div>
             <button class="menu-button" on:click={logout}>Log out</button>
         </div>
+        <div>
+            {#if deleteError.length > 0}
+                <p class="error-text ">{deleteError}</p>
+            {/if}
+            <button class="red-button" on:click={deleteAccount}>Delete Account</button>
+        </div>
 
     {/await}
 
@@ -197,6 +227,9 @@
     }
     .menu-button {
         margin-bottom: 0em;
+    }
+    .red-button {
+        background-color: red;
     }
     .dropdown {
         position: relative;

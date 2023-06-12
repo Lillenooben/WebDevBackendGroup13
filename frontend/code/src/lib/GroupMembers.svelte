@@ -3,8 +3,7 @@
     import { user } from "../user-store.js"
     import { onMount } from "svelte"
 
-    const urlArray = window.location.pathname.split("/")
-    const groupID = urlArray[urlArray.length-2]
+    export let groupID
 
     let error = ""
     let inviteError = ""

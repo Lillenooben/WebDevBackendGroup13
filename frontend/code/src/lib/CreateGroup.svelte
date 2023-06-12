@@ -60,6 +60,7 @@
             }
 
         }catch(error){
+            alert('An error occured while creating group:\n' + error + '\nPlease Try again later')
             console.log(error)
         }
 
