@@ -24,7 +24,7 @@
             date: eventDate,
         }
 
-        const response = await fetch("http://localhost:8080/event/" + eventID + "/update", {
+        const response = await fetch("http://localhost:8080/event/" + eventID, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",

@@ -88,7 +88,7 @@
             return
         }
 
-        const response = await fetch("http://localhost:8080/group/" + groupID + "/delete?userID=" + $user.userID, {
+        const response = await fetch("http://localhost:8080/group/" + groupID + "?userID=" + $user.userID, {
             method: "DELETE",
             headers: {
                 "Authorization": "Bearer "+$user.accessToken,
@@ -129,7 +129,7 @@
 
     async function deleteEvent(eventID) {
 
-        const response = await fetch("http://localhost:8080/event/" + eventID + "/delete", {
+        const response = await fetch("http://localhost:8080/event/" + eventID, {
             method: "DELETE",
             headers: {
                 "Authorization": "Bearer "+$user.accessToken,

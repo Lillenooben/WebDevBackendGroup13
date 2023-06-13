@@ -3,7 +3,7 @@
     import { navigate } from "svelte-routing"
     import Loader from "./Loader.svelte"
 
-    const fetchUserPromise = fetch("http://localhost:8080/user/get?userID=" + $user.userID, {
+    const fetchUserPromise = fetch("http://localhost:8080/user/?userID=" + $user.userID, {
         method: "GET",
         headers: {
             "Authorization": "Bearer "+$user.accessToken,
@@ -123,7 +123,7 @@
             return
         }
 
-        const response = await fetch("http://localhost:8080/user/delete?userID=" + $user.userID, {
+        const response = await fetch("http://localhost:8080/user/?userID=" + $user.userID, {
             method: "DELETE",
             headers: {
                 "Authorization": "Bearer "+$user.accessToken,

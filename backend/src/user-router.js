@@ -7,7 +7,7 @@ const router = express.Router()
 
 router.use(express.json())
 
-router.post("/create", async function(request, response){
+router.post("/", async function(request, response){
     const body = request.body
 
     const errors = []
@@ -87,7 +87,7 @@ router.get("/groups", async function(request, response){
     
 })
 
-router.get("/get", async function(request, response){
+router.get("/", async function(request, response){
 
     const authResult = await globalFunctions.authorizeJWT(request)
 
@@ -251,7 +251,7 @@ router.get("/events", async function(request, response){
     
 })
 
-router.delete("/delete", async function(request, response){
+router.delete("/", async function(request, response){
 
     const authResult = await globalFunctions.authorizeJWT(request)
 

@@ -42,7 +42,7 @@ router.get("/:eventID", async function(request, response){
     }
 })
 
-router.put("/:eventID/update", async function(request, response){
+router.put("/:eventID", async function(request, response){
 
     const authResult = await globalFunctions.authorizeJWT(request)
 
@@ -89,7 +89,7 @@ router.put("/:eventID/update", async function(request, response){
     }
 })
 
-router.delete("/:eventID/delete", async function(request, response){
+router.delete("/:eventID", async function(request, response){
 
     const authResult = await globalFunctions.authorizeJWT(request)
 

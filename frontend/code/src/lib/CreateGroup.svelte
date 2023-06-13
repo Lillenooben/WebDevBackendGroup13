@@ -33,7 +33,7 @@
 
         try {
 
-            const response = await fetch("http://localhost:8080/group/create?userID=" + $user.userID, {
+            const response = await fetch("http://localhost:8080/group/?userID=" + $user.userID, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

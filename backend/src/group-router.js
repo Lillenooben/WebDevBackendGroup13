@@ -7,7 +7,7 @@ const router = express.Router()
 
 router.use(express.json())
 
-router.post("/create", async function(request, response){
+router.post("/", async function(request, response){
 
     const authResult = await globalFunctions.authorizeJWT(request)
 
@@ -246,45 +246,6 @@ router.delete("/:groupID/leave", async function(request, response){
     }
 })
 
-router.delete("/:groupID/delete", async function(request, response){
-
-    const authResult = await globalFunctions.authorizeJWT(request)
-
-    if (authResult.succeeded) {
-
-        const userID = request.query.userID
-
-        if ( parseInt(authResult.payload.sub) != parseInt(userID) ) {
-            response.status(401).json({error: "Access unauthorized"})
-            return
-        }
-
-        const connection = await pool.getConnection()
-        try{
-            const groupID = parseInt(request.params.groupID)
-            const query = "DELETE FROM `group` WHERE groupID = ? AND ownerID = ?"
-            await connection.query(query, [groupID, userID])
-            response.status(204).end()
-
-        }catch(error){
-            console.log(error)
-            if (error.code = "ER_SP_FETCH_NO_DATA") {
-                response.status(404).json({error: "Group and owner combination not found"})
-                return
-            }
-            response.status(500).json({error: "Internal Server Error"})
-
-        }finally{
-            if (connection) {
-                connection.release()
-            }
-        }
-
-    } else {
-        response.status(401).json({error: "Access unauthorized"})
-    }
-})
-
 router.get("/:groupID", async function(request, response){
 
     const authResult = await globalFunctions.authorizeJWT(request)
@@ -403,7 +364,7 @@ router.post("/:groupID/event", async function(request, response){
     
 })
 
-router.put("/:groupID/update", async function(request, response){
+router.put("/:groupID", async function(request, response){
 
     const authResult = await globalFunctions.authorizeJWT(request)
 
@@ -652,6 +613,45 @@ router.delete("/:groupID/member", async function(request, response){
             } else {
                 response.status(500).json({error: "Internal Server Error"})
             }
+
+        }finally{
+            if (connection) {
+                connection.release()
+            }
+        }
+
+    } else {
+        response.status(401).json({error: "Access unauthorized"})
+    }
+})
+
+router.delete("/:groupID", async function(request, response){
+
+    const authResult = await globalFunctions.authorizeJWT(request)
+
+    if (authResult.succeeded) {
+
+        const userID = request.query.userID
+
+        if ( parseInt(authResult.payload.sub) != parseInt(userID) ) {
+            response.status(401).json({error: "Access unauthorized"})
+            return
+        }
+
+        const connection = await pool.getConnection()
+        try{
+            const groupID = parseInt(request.params.groupID)
+            const query = "DELETE FROM `group` WHERE groupID = ? AND ownerID = ?"
+            await connection.query(query, [groupID, userID])
+            response.status(204).end()
+
+        }catch(error){
+            console.log(error)
+            if (error.code = "ER_SP_FETCH_NO_DATA") {
+                response.status(404).json({error: "Group and owner combination not found"})
+                return
+            }
+            response.status(500).json({error: "Internal Server Error"})
 
         }finally{
             if (connection) {
