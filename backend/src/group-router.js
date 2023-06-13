@@ -34,11 +34,6 @@ router.post("/create", async function(request, response){
         const enteredImage = request.body.imageData
         const enteredGroupName = request.body.groupName
         const userID = request.query.userID
-
-        if (parseInt(authResult.payload.sub) != parseInt(userID)) {
-            response.status(401).json({error: "Access unauthorized"})
-            return
-        }
         
         if (enteredGroupName.length < MIN_GROUPNAME_LEN || enteredGroupName.length > MAX_GROUPNAME_LEN) {
             response.status(400).json({error: "Group name must be between " + MIN_GROUPNAME_LEN + " and " + MAX_GROUPNAME_LEN + " characters"})
@@ -81,11 +76,6 @@ router.get("/invites", async function(request, response){
         const connection = await pool.getConnection()
         const userID = request.query.userID
 
-        if (parseInt(authResult.payload.sub) != parseInt(userID)) {
-            response.status(401).json({error: "Access unauthorized"})
-            return
-        }
-
         try{
             const query = `SELECT invitationsTable.groupID, groupsTable.groupName 
                            FROM invitationsTable 
@@ -121,14 +111,6 @@ router.post("/:groupID/invite", async function(request, response){
         const groupID = parseInt(request.params.groupID)
 
         try{
-            const selectOwnerQuery = "SELECT ownerID FROM groupsTable WHERE groupID = ?"
-            const resultedOwner = await connection.query(selectOwnerQuery, [groupID])
-
-            if (parseInt(authResult.payload.sub) != parseInt(resultedOwner.ownerID)) {
-                response.status(401).json({error: "Access unauthorized"})
-                return
-            }
-
             const username = request.body.username
             let query = "SELECT userID FROM usersTable WHERE username = ?"
             const resultUser = await connection.query(query, [username])
@@ -173,19 +155,13 @@ router.post("/:groupID/invite/accept", async function(request, response){
     if (authResult.succeeded) {
 
         const userID = request.query.userID
-        const groupID = parseInt(request.params.groupID)
         const connection = await pool.getConnection()
 
-        if (parseInt(authResult.payload.sub) != parseInt(userID)) {
-            response.status(401).json({error: "Access unauthorized"})
-            return
-        }
-
         try{
-            mod.createUserGroupConnection(userID, groupID, false)
+            mod.createUserGroupConnection(userID, request.params.groupID, false)
 
             const query = "DELETE FROM invitationsTable WHERE userID = ? AND groupID = ?"
-            await connection.query(query, [userID, groupID])
+            await connection.query(query, [userID, request.params.groupID])
 
             response.status(201).end()
         
@@ -207,11 +183,6 @@ router.delete("/:groupID/invite", async function(request, response){
 
         const connection = await pool.getConnection()
         const userID = request.query.userID
-
-        if (parseInt(authResult.payload.sub) != parseInt(userID)) {
-            response.status(401).json({error: "Access unauthorized"})
-            return
-        }
 
         try{
             const groupID = parseInt(request.params.groupID)
@@ -244,11 +215,6 @@ router.delete("/:groupID/leave", async function(request, response){
         const connection = await pool.getConnection()
         const userID = request.query.userID
 
-        if (parseInt(authResult.payload.sub) != parseInt(userID)) {
-            response.status(401).json({error: "Access unauthorized"})
-            return
-        }
-
         try{
             const groupID = parseInt(request.params.groupID)
             const query = "DELETE FROM userGroupConTable WHERE userID = ? AND groupID = ?"
@@ -278,11 +244,6 @@ router.delete("/:groupID/delete", async function(request, response){
 
         const connection = await pool.getConnection()
         const userID = request.query.userID
-
-        if (parseInt(authResult.payload.sub) != parseInt(userID)) {
-            response.status(401).json({error: "Access unauthorized"})
-            return
-        }
 
         try{
             const groupID = parseInt(request.params.groupID)
@@ -318,11 +279,6 @@ router.get("/:groupID", async function(request, response){
         const connection = await pool.getConnection()
         const groupID = parseInt(request.params.groupID)
         const userID = parseInt(request.query.userID)
-
-        if (parseInt(authResult.payload.sub) != parseInt(userID)) {
-            response.status(401).json({error: "Access unauthorized"})
-            return
-        }
 
         try{
             const query = `SELECT gT.groupID, gT.ownerID, gT.groupName, gT.groupImage, gT.memberCount, gT.eventCount, gT.messageCount
@@ -373,11 +329,6 @@ router.post("/:groupID/event", async function(request, response){
         const eventDesc = request.body.description
         const eventDate = request.body.date
         const currentDate = new Date()
-
-        if (parseInt(authResult.payload.sub) != parseInt(userID)) {
-            response.status(401).json({error: "Access unauthorized"})
-            return
-        }
 
         if (eventTitle.length < MIN_EVENTNAME_LEN || eventTitle.length > MAX_EVENTNAME_LEN) {
             response.status(400).json({error: `Title must be between ${MIN_EVENTNAME_LEN} and ${MAX_EVENTNAME_LEN} characters`})
@@ -440,11 +391,6 @@ router.put("/:groupID/update", async function(request, response){
         const userID = request.query.userID
         const updatedGroupName = request.body.groupName
         const updatedGroupImage = request.body.imageData
-
-        if (parseInt(authResult.payload.sub) != parseInt(userID)) {
-            response.status(401).json({error: "Access unauthorized"})
-            return
-        }
         
         const connection = await pool.getConnection()
 

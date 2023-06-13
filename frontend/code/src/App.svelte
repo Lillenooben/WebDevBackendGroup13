@@ -44,7 +44,7 @@
         <Route path="group/update/:id" component="{UpdateGroup}" />
         <Route path="login" component="{Login}" />
         <Route path="signup" component="{Signup}" />
-        <Route path="create-event/:id" component="{CreateEvent}" /> 
+        <Route path="create-event/:id" component="{CreateEvent}" />
         <Route path="event/update/:id" component="{UpdateEvent}" />
         <Route path="group/:id/members" component="{GroupMembers}" />
     </main>

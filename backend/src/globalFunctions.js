@@ -15,7 +15,15 @@ const pool = createPool({
 
 pool.on('error', function(error){
     console.log("Error from pool", error)
-}) 
+})
+
+export function getParsedIDs(objectArray){
+    let IDs = []
+    objectArray.forEach(element => {
+        IDs.push(Object.values(element)[0])
+    });
+    return IDs
+}
 
 export async function hashPassword(password){
     return new Promise((resolve, reject) => {
@@ -63,7 +71,6 @@ export function authorizeJWT(request){
 
 export async function addUser(username, password){
     let didSucceed = false
-    let errorMessage = ""
     const connection = await pool.getConnection()
 
     try{
@@ -71,18 +78,13 @@ export async function addUser(username, password){
         const query = "INSERT INTO usersTable (username, userPassword, profileImage) VALUES (?,?,?)"
         await connection.query(query, [username, hashedPassword, ""])
         didSucceed = true
-    } catch(error) {
+    }catch(error){
         console.log(error)
-        if (error.code == "ER_DUP_ENTRY") {
-            errorMessage = "Username already taken"
-        } else {
-            errorMessage = "Internal Server Error"
-        }
     } finally {
         if (connection) {
             connection.release()
         }
-        return {didSucceed: didSucceed, errorMessage: errorMessage}
+        return didSucceed
     }
 }
 
@@ -92,14 +94,15 @@ export async function createUserEventConnections(groupID){
     try{
         let query = "SELECT userID FROM userGroupConTable WHERE groupID = ?"
         const usersInGroup = await connection.query(query, [groupID])
-        
+        const userIDsArray = getParsedIDs(usersInGroup)
+
         query = "SELECT eventID FROM eventsTable WHERE groupID = ? ORDER BY eventID DESC"
         const eventIDsFromGroupID = await connection.query(query, [groupID])
         const eventIDFromLatestEvent = eventIDsFromGroupID[0].eventID
 
         query = "INSERT INTO userEventConTable (userID, eventID) VALUES (?,?)"
-        for (let user of usersInGroup){
-            await connection.query(query, [user.userID, eventIDFromLatestEvent])
+        for (let userID of userIDsArray){
+            await connection.query(query, [userID, eventIDFromLatestEvent])
         }
 
     }catch(error){
