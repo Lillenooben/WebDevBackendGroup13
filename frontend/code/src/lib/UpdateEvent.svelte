@@ -4,7 +4,7 @@
     import { user } from "../user-store.js"
     import { navigate } from "svelte-routing"
 
-    let eventID = window.location.pathname.split("/").pop()
+    export let eventID
     let groupID = ""
 
     let eventTitle = ""
@@ -24,7 +24,7 @@
             date: eventDate,
         }
 
-        const response = await fetch("http://localhost:8080/event/" + eventID + "/update", {
+        const response = await fetch("http://localhost:8080/event/" + eventID, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
@@ -56,9 +56,9 @@
         const body = await response.json()
 
         if (response.status == 200) {
-            eventTitle = body.event.eventTitle
-            eventDesc = body.event.eventDesc
-            eventDate = body.event.eventDate.split('.')[0]
+            eventTitle = body.event.title
+            eventDesc = body.event.description
+            eventDate = body.event.date.split('.')[0]
             groupID = body.event.groupID
         } else {
             error = body.error

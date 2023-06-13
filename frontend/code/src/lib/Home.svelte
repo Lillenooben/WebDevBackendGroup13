@@ -28,10 +28,10 @@
             <section class="card-wrapper">
                 {#each response.eventsArray as event}
                     <button class="event-card" on:click={() => navigate(`/group/${event.groupID}`)}>
-                        <i class="small-text">{event.groupName}</i>
-                        <h2 class="card-header">{event.eventTitle}</h2>
-                        <h3 class="card-header">{event.eventDate.split('T')[0]} {event.eventDate.split('T')[1].slice(0, 5)}</h3>
-                        <p>{event.eventDesc}</p>
+                        <i class="small-text">{event.name}</i>
+                        <h2 class="card-header">{event.title}</h2>
+                        <h3 class="card-header">{event.date.split('T')[0]} {event.date.split('T')[1].slice(0, 5)}</h3>
+                        <p>{event.description}</p>
                     </button>
                 {/each}
             </section>

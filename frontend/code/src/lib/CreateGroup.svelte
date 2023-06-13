@@ -33,7 +33,7 @@
 
         try {
 
-            const response = await fetch("http://localhost:8080/group/create?userID=" + $user.userID, {
+            const response = await fetch("http://localhost:8080/group/?userID=" + $user.userID, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -60,6 +60,7 @@
             }
 
         }catch(error){
+            alert('An error occured while creating group:\n' + error + '\nPlease Try again later')
             console.log(error)
         }
 

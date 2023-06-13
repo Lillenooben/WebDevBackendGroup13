@@ -40,13 +40,13 @@
         <Route path="groups" component="{MyGroups}" />
         <Route path="create-group" component="{CreateGroup}" />
         <Route path="profile" component="{Profile}" />
-        <Route path="group/:id" component="{Group}" />
-        <Route path="group/update/:id" component="{UpdateGroup}" />
+        <Route path="group/:groupID" component="{Group}" let:params={groupID} />
+        <Route path="group/update/:groupID" component="{UpdateGroup}" let:params={groupID} />
         <Route path="login" component="{Login}" />
         <Route path="signup" component="{Signup}" />
-        <Route path="create-event/:id" component="{CreateEvent}" />
-        <Route path="event/update/:id" component="{UpdateEvent}" />
-        <Route path="group/:id/members" component="{GroupMembers}" />
+        <Route path="create-event/:groupID" component="{CreateEvent}" let:params={groupID}/>
+        <Route path="event/update/:eventID" component="{UpdateEvent}" let:params={eventID}/>
+        <Route path="group/:groupID/members" component="{GroupMembers}" let:params={groupID}/>
     </main>
   </Router>
 

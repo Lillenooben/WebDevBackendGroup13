@@ -3,7 +3,7 @@
     import { navigate } from "svelte-routing"
     import Loader from "./Loader.svelte"
 
-    const fetchUserPromise = fetch("http://localhost:8080/user/get?userID=" + $user.userID, {
+    const fetchUserPromise = fetch("http://localhost:8080/user/?userID=" + $user.userID, {
         method: "GET",
         headers: {
             "Authorization": "Bearer "+$user.accessToken,
@@ -22,6 +22,8 @@
     let oldPassword = ""
     let newPassword = ""
     let confPassword = ""
+
+    let deleteError = ""
 
     let fileInput
     let files
@@ -114,6 +116,28 @@
         }
         navigate("/login")
     }
+
+    async function deleteAccount() {
+
+        if (!confirm("Are you sure you wish to delete your account? \nThis cannot be undone!")) {
+            return
+        }
+
+        const response = await fetch("http://localhost:8080/user/?userID=" + $user.userID, {
+            method: "DELETE",
+            headers: {
+                "Authorization": "Bearer "+$user.accessToken,
+            },
+        })
+
+        if (response.status == 204) {
+            logout()
+
+        } else {
+            const body = await response.json()
+            deleteError = body.error
+        }
+    }
 </script>
 
 {#await fetchUserPromise}
@@ -124,15 +148,15 @@
 
     {#await response.json() then response}
     
-        <h1>{response.username}</h1>
+        <h1>{response.name}</h1>
 
         <div>
             {#if avatar}
                 <img class="avatar" src={avatar} alt="uploaded avatar"/>
-            {:else if response.profileImage == ""}
+            {:else if response.image == ""}
                 <img class="avatar" src="/userAvatar.png" alt="placeholder avatar"/>
             {:else}
-            <img src={response.profileImage} class="avatar" alt="user Avatar">
+            <img src={response.image} class="avatar" alt="user Avatar">
             {/if}
         </div>
 
@@ -182,6 +206,12 @@
         <div>
             <button class="menu-button" on:click={logout}>Log out</button>
         </div>
+        <div>
+            {#if deleteError.length > 0}
+                <p class="error-text ">{deleteError}</p>
+            {/if}
+            <button class="red-button" on:click={deleteAccount}>Delete Account</button>
+        </div>
 
     {/await}
 
@@ -197,6 +227,9 @@
     }
     .menu-button {
         margin-bottom: 0em;
+    }
+    .red-button {
+        background-color: red;
     }
     .dropdown {
         position: relative;

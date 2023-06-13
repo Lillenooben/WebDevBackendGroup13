@@ -4,7 +4,7 @@
     import Loader from "./Loader.svelte"
     import { onDestroy, onMount } from "svelte"
 
-    const groupID = window.location.pathname.split("/").pop()
+    export let groupID
 
     let deleteErrorGroup = ""
     let deleteErrorEvent = ""
@@ -88,7 +88,7 @@
             return
         }
 
-        const response = await fetch("http://localhost:8080/group/" + groupID + "/delete?userID=" + $user.userID, {
+        const response = await fetch("http://localhost:8080/group/" + groupID + "?userID=" + $user.userID, {
             method: "DELETE",
             headers: {
                 "Authorization": "Bearer "+$user.accessToken,
@@ -129,7 +129,7 @@
 
     async function deleteEvent(eventID) {
 
-        const response = await fetch("http://localhost:8080/event/" + eventID + "/delete", {
+        const response = await fetch("http://localhost:8080/event/" + eventID, {
             method: "DELETE",
             headers: {
                 "Authorization": "Bearer "+$user.accessToken,
@@ -157,13 +157,13 @@
 
     {#await response.json() then response}
 
-        {#if response.group.groupImage == ""}
+        {#if response.group.image == ""}
             <img src="/groupAvatar.png" class="avatar" alt="Group Avatar">
         {:else}
-            <img src={response.group.groupImage} class="avatar" alt="Group Avatar">
+            <img src={response.group.image} class="avatar" alt="Group Avatar">
         {/if}
 
-        <h1 class="title">{response.group.groupName}</h1>
+        <h1 class="title">{response.group.name}</h1>
         {#if response.isOwner}
             <button class="header-button" on:click={() => navigate(`/group/update/${response.group.groupID}`)}>Edit group</button>
         {/if}
@@ -190,16 +190,16 @@
                         {:else}
                             {#each eResponse.eventsArray as event}
                                 <div class="event-card">
-                                    <h2 class="card-header">{event.eventTitle}</h2>
-                                    <h3 class="card-header">{event.eventDate.split('T')[0]} {event.eventDate.split('T')[1].slice(0, 5)}</h3>
+                                    <h2 class="card-header">{event.title}</h2>
+                                    <h3 class="card-header">{event.date.split('T')[0]} {event.date.split('T')[1].slice(0, 5)}</h3>
                                     {#if response.isOwner}
                                         <div class="button-wrapper">
                                             <Link to="event/update/{event.eventID}">Edit</Link>
                                             <button class="text-button" on:click={() => deleteEvent(event.eventID)}>Delete</button>
                                         </div>
                                     {/if}
-                                    {#if (event.eventDesc != "")}
-                                        <p>{event.eventDesc}</p>
+                                    {#if (event.description != "")}
+                                        <p>{event.description}</p>
                                     {:else}
                                         <i>No description</i>
                                     {/if}
@@ -218,13 +218,13 @@
                         {#each messages as message}
                             {#if $user.userID == message.userID}
                                 <div class="chat-message user-chat">
-                                    <strong>{message.username}</strong>
-                                    <p class="chat-body">{message.message}</p>
+                                    <strong>{message.name}</strong>
+                                    <p class="chat-body">{message.body}</p>
                                 </div>
                             {:else}
                                 <div class="chat-message other-chat">
-                                    <strong>{message.username}</strong>
-                                    <p class="chat-body">{message.message}</p>
+                                    <strong>{message.name}</strong>
+                                    <p class="chat-body">{message.body}</p>
                                 </div>
                             {/if}
                         {/each}

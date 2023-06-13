@@ -3,8 +3,7 @@
     import { user } from "../user-store.js"
     import { onMount } from "svelte"
 
-    const urlArray = window.location.pathname.split("/")
-    const groupID = urlArray[urlArray.length-2]
+    export let groupID
 
     let error = ""
     let inviteError = ""
@@ -126,12 +125,12 @@
             {#each response.membersArray as member}
 
                 <div class="member-card">
-                    {#if member.profileImage == ""}
+                    {#if member.image == ""}
                         <img class="avatar" src="/userAvatar.png" alt="placeholder avatar"/>
                     {:else}
-                        <img class="avatar" src={member.profileImage} alt="avatar"/>
+                        <img class="avatar" src={member.image} alt="avatar"/>
                     {/if}
-                    <h2>{member.username}</h2>
+                    <h2>{member.name}</h2>
 
                     {#if isOwner && member.userID != $user.userID}
                         <div class="button-wrapper">

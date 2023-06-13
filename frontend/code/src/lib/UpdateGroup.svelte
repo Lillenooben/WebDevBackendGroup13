@@ -3,7 +3,7 @@
     import { user } from "../user-store.js"
     import { navigate } from "svelte-routing"
 
-    const groupID = window.location.pathname.split("/").pop()
+    export let groupID
     let groupName = ""
     let error = ""
 
@@ -27,7 +27,7 @@
             imageData: avatar
         }
 
-        const response = await fetch("http://localhost:8080/group/" + groupID + "/update?userID=" + $user.userID, {
+        const response = await fetch("http://localhost:8080/group/" + groupID + "?userID=" + $user.userID, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
@@ -58,8 +58,8 @@
         const body = await response.json()
 
         if (response.status == 200) {
-            groupName = body.group.groupName
-            avatar = body.group.groupImage
+            groupName = body.group.name
+            avatar = body.group.image
         } else {
             error = body.error
         }

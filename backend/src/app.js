@@ -1,24 +1,10 @@
 import express from 'express'
 import jwt from 'jsonwebtoken'
-import {createPool} from 'mariadb'
-import {router as userRouter} from './user-router.js'
-import {router as groupRouter} from './group-router.js'
-import {router as eventRouter} from './event-router.js'
-import * as mod from './globalFunctions.js'
-
-export const ACCESS_TOKEN_SECRET = "sdkvjnaewrfjjljqwlvd"
-
-const pool = createPool({
-    host: "database",
-    port: 3306,
-    user: "root",
-    password: "abc123",
-    database: "abc"
-})
-
-pool.on('error', function(error){
-    console.log("Error from pool", error)
-})
+import {userRouter} from './user-router.js'
+import {groupRouter} from './group-router.js'
+import {eventRouter} from './event-router.js'
+import * as globalFunctions from './globalFunctions.js'
+import {ACCESS_TOKEN_SECRET, EXPIRATION_TIME_SECONDS} from './constants.js'
 
 const app = express()
 
@@ -47,33 +33,35 @@ app.post("/tokens", async function(request, response){
         return
     }
 
-    const result = await mod.compareLoginCredentials(username, password)
+    const loginResult = await globalFunctions.compareLoginCredentials(username, password)
 
-    if(result.success){
+    if(loginResult.didSucceed){
         
         const payload = {
-            sub: result.user.userID,
+            sub: loginResult.user.userID,
         }
         
         jwt.sign(payload, ACCESS_TOKEN_SECRET, function(error, access_token){
 
             if (error) {
-                response.status(500).json({error})
+                console.log(error)
+                response.status(500).json({error: "internal server error"})
             } else {
 
                 const idTokenPayload = {
                     iss: "http://localhost:8080",
-                    sub: result.user.userID,
+                    sub: loginResult.user.userID,
                     aud: "Notify.Us",
                     iat: Math.floor(Date.now() / 1000),
-                    exp: Math.floor(Date.now() / 1000)+600,
-                    username: result.user.username
+                    exp: Math.floor(Date.now() / 1000)+EXPIRATION_TIME_SECONDS,
+                    username: loginResult.user.name
                 }
 
                 jwt.sign(idTokenPayload, ACCESS_TOKEN_SECRET, function(error, id_token){
 
                     if (error) {
-                        response.status(500).json({error})
+                        console.log(error)
+                        response.status(500).json({error: "internal server error"})
 
                     } else {
                         response.status(200).json({
